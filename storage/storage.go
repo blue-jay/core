@@ -1,0 +1,17 @@
+package storage
+
+import (
+	"encoding/json"
+
+	"github.com/blue-jay/core/storage/driver/mysql"
+)
+
+// Info contains the database connection information for the different storage.
+type Info struct {
+	MySQL mysql.Info `json:"MySQL"`
+}
+
+// ParseJSON unmarshals bytes to structs.
+func (c *Info) ParseJSON(b []byte) error {
+	return json.Unmarshal(b, &c)
+}
