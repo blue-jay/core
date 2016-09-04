@@ -23,7 +23,7 @@ import (
 var (
 	info      Info
 	infoMutex sync.RWMutex
-
+	// ErrTooLarge is when the uploaded file is too large
 	ErrTooLarge = errors.New("File is too large.")
 )
 

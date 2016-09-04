@@ -59,14 +59,15 @@ type Info struct {
 	output string
 }
 
-func (i *Info) Position() int {
+// Position returns the index of the migration. 0 is no migration.
+func (info *Info) Position() int {
 	// Get the last migration from the database
-	migrationName, err := i.Db.Status()
+	migrationName, err := info.Db.Status()
 	if len(migrationName) > 0 && err == nil {
-		i.position, _ = i.migrationPosition(migrationName)
+		info.position, _ = info.migrationPosition(migrationName)
 	}
 
-	return i.position
+	return info.position
 }
 
 // Interface defines all the functions required for a migration.
