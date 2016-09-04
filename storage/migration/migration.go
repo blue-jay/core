@@ -63,8 +63,12 @@ type Info struct {
 func (info *Info) Position() int {
 	// Get the last migration from the database
 	migrationName, err := info.Db.Status()
+
+	// If migration is found
 	if len(migrationName) > 0 && err == nil {
 		info.position, _ = info.migrationPosition(migrationName)
+	} else { // Else reset the position to 0
+		info.position = 0
 	}
 
 	return info.position
