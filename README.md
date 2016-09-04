@@ -3,7 +3,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/blue-jay/core)](https://goreportcard.com/report/github.com/blue-jay/core)
 [![GoDoc](https://godoc.org/github.com/blue-jay/core?status.svg)](https://godoc.org/github.com/blue-jay/core)
 
-Blueprint for your next web application in Go.
+Core packages available to Blueprint and Jay as well as other applications.
 
 Documentation available here: http://blue-jay.github.io/
 
@@ -21,7 +21,7 @@ model-view-controller (MVC) style web skeleton.
 modules for find/replace, database migrations, code generation, and env.json.
 
 - [**Core**](https://github.com/blue-jay/core) is a collection of packages
-that are used by Blueprint and Jay.
+available to Blueprint and Jay as well as other applications.
 
 Check the [milestones](https://github.com/blue-jay/core/milestones) for
 project status.

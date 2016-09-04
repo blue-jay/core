@@ -9,11 +9,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/blue-jay/core/storage"
 	database "github.com/blue-jay/core/storage/driver/mysql"
 	"github.com/blue-jay/core/storage/migration"
 	"github.com/blue-jay/core/storage/migration/mysql"
-
-	"github.com/blue-jay/jay/lib/common"
 )
 
 var (
@@ -42,7 +41,7 @@ func TestMain(m *testing.M) {
 // setup handles any start up tasks.
 func setup() *migration.Info {
 	// Load the config
-	info, err := common.LoadConfig(os.Getenv("JAYCONFIG"))
+	info, err := storage.LoadConfig(os.Getenv("JAYCONFIG"))
 	if err != nil {
 		log.Fatalf("%v", err)
 	}

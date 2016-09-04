@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/blue-jay/core/file"
+	"github.com/blue-jay/core/storage"
 	database "github.com/blue-jay/core/storage/driver/mysql"
 	"github.com/blue-jay/core/storage/migration"
-
-	"github.com/blue-jay/jay/lib/common"
 )
 
 // *****************************************************************************
@@ -66,7 +66,7 @@ func New() (*migration.Info, error) {
 	folder := filepath.Join(projectRoot, i.MigrationFolder)
 
 	// If the folder doesn't exist
-	if !common.Exists(folder) {
+	if !file.Exists(folder) {
 		// Set to the current folder
 		dir, _ := os.Getwd()
 		folder = filepath.Join(dir, i.MigrationFolder)
@@ -239,7 +239,7 @@ func SetUp(envPath string, dbName string) {
 	}
 
 	// Load the config
-	info, err := common.LoadConfig(os.Getenv("JAYCONFIG"))
+	info, err := storage.LoadConfig(os.Getenv("JAYCONFIG"))
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
