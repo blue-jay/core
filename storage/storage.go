@@ -1,3 +1,4 @@
+// Package storage loads the configuration file with only storage information.
 package storage
 
 import (
