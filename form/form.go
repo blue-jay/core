@@ -128,7 +128,7 @@ func Map() template.FuncMap {
 }
 
 // formText returns an HTML attribute of name and value (if repopulating).
-func formText(name string, m map[string]interface{}) template.HTMLAttr {
+func formText(name string, defaultValue interface{}, m map[string]interface{}) template.HTMLAttr {
 	if val, ok := m[name]; ok {
 		switch t := val.(type) {
 		case []string:
@@ -140,11 +140,15 @@ func formText(name string, m map[string]interface{}) template.HTMLAttr {
 
 	}
 
+	if defaultValue != nil {
+		return template.HTMLAttr(fmt.Sprintf(`name="%v" value="%v"`, name, defaultValue))
+	}
+
 	return template.HTMLAttr(fmt.Sprintf(`name="%v"`, name))
 }
 
 // formTextarea returns an HTML value (if repopulating).
-func formTextarea(name string, m map[string]interface{}) template.HTML {
+func formTextarea(name string, defaultValue interface{}, m map[string]interface{}) template.HTML {
 	if val, ok := m[name]; ok {
 		switch t := val.(type) {
 		case []string:
@@ -155,11 +159,15 @@ func formTextarea(name string, m map[string]interface{}) template.HTML {
 
 	}
 
+	if defaultValue != nil {
+		return template.HTML(fmt.Sprintf("%v", defaultValue))
+	}
+
 	return template.HTML("")
 }
 
 // formCheckbox returns an HTML attribute of type, name, value and checked (if repopulating).
-func formCheckbox(name, value string, m map[string]interface{}) template.HTMLAttr {
+func formCheckbox(name, value string, defaultValue interface{}, m map[string]interface{}) template.HTMLAttr {
 	if val, ok := m[name]; ok {
 		switch t := val.(type) {
 		case []string:
@@ -172,11 +180,15 @@ func formCheckbox(name, value string, m map[string]interface{}) template.HTMLAtt
 		}
 	}
 
+	if fmt.Sprintf("%v", defaultValue) == value {
+		return template.HTMLAttr(fmt.Sprintf(`type="checkbox" name="%v" value="%v" checked`, name, value))
+	}
+
 	return template.HTMLAttr(fmt.Sprintf(`type="checkbox" name="%v" value="%v"`, name, value))
 }
 
 // formRadio returns an HTML attribute of type, name, value and checked (if repopulating).
-func formRadio(name, value string, m map[string]interface{}) template.HTMLAttr {
+func formRadio(name, value string, defaultValue interface{}, m map[string]interface{}) template.HTMLAttr {
 	if val, ok := m[name]; ok {
 		switch t := val.(type) {
 		case []string:
@@ -189,11 +201,15 @@ func formRadio(name, value string, m map[string]interface{}) template.HTMLAttr {
 		}
 	}
 
+	if fmt.Sprintf("%v", defaultValue) == value {
+		return template.HTMLAttr(fmt.Sprintf(`type="radio" name="%v" value="%v" checked`, name, value))
+	}
+
 	return template.HTMLAttr(fmt.Sprintf(`type="radio" name="%v" value="%v"`, name, value))
 }
 
 // formOption returns an HTML attribute of value and selected (if repopulating).
-func formOption(name, value string, m map[string]interface{}) template.HTMLAttr {
+func formOption(name, value string, defaultValue interface{}, m map[string]interface{}) template.HTMLAttr {
 	if val, ok := m[name]; ok {
 		switch t := val.(type) {
 		case []string:
@@ -204,6 +220,10 @@ func formOption(name, value string, m map[string]interface{}) template.HTMLAttr 
 				}
 			}
 		}
+	}
+
+	if fmt.Sprintf("%v", defaultValue) == value {
+		return template.HTMLAttr(fmt.Sprintf(`value="%v" selected`, value))
 	}
 
 	return template.HTMLAttr(fmt.Sprintf(`value="%v"`, value))
