@@ -54,24 +54,12 @@ func ResetConfig() {
 	infoMutex.Unlock()
 }
 
-// Configuration defines the shared configuration interface.
-type Configuration struct {
-	Info
-}
-
-// Shared returns the global configuration information.
-func Shared() Configuration {
-	return Configuration{
-		Config(),
-	}
-}
-
 // *****************************************************************************
 // Database Handling
 // *****************************************************************************
 
 // Connect to the database.
-func (c Configuration) Connect(specificDatabase bool) (*sqlx.DB, error) {
+func (c Info) Connect(specificDatabase bool) (*sqlx.DB, error) {
 	var err error
 
 	// Connect to database and ping
@@ -88,7 +76,7 @@ func Disconnect() error {
 }
 
 // Create a new database.
-func (c Configuration) Create() error {
+func (c Info) Create() error {
 	// Set defaults
 	ci := c.setDefaults()
 
@@ -103,7 +91,7 @@ func (c Configuration) Create() error {
 }
 
 // Drop a database.
-func (c Configuration) Drop() error {
+func (c Info) Drop() error {
 	// Drop the database
 	_, err := SQL.Exec(fmt.Sprintf(`DROP DATABASE %v;`, c.Database))
 	return err
@@ -119,7 +107,7 @@ var (
 )
 
 // DSN returns the Data Source Name.
-func (c Configuration) dsn(includeDatabase bool) string {
+func (c Info) dsn(includeDatabase bool) string {
 	// Set defaults
 	ci := c.setDefaults()
 
@@ -161,8 +149,8 @@ func (c Configuration) dsn(includeDatabase bool) string {
 }
 
 // setDefaults sets the charset and collation if they are not set.
-func (c Configuration) setDefaults() Info {
-	ci := c.Info
+func (c Info) setDefaults() Info {
+	ci := c
 
 	if len(ci.Charset) == 0 {
 		ci.Charset = "utf8"

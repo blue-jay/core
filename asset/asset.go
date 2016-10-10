@@ -48,25 +48,13 @@ func Config() Info {
 	return info
 }
 
-// Configuration defines the shared configuration interface.
-type Configuration struct {
-	Info
-}
-
-// Shared returns the global configuration information.
-func Shared() Configuration {
-	return Configuration{
-		Config(),
-	}
-}
-
 // *****************************************************************************
 // FuncMap for Template Packages
 // *****************************************************************************
 
 // Map returns a template.FuncMap. JS returns JavaScript tag with a
 // timestamp. CSS returns stylesheet tag with a timestamp.
-func (c Configuration) Map(baseURI string) template.FuncMap {
+func (c Info) Map(baseURI string) template.FuncMap {
 	f := make(template.FuncMap)
 
 	f["JS"] = func(fpath string) template.HTML {
@@ -102,7 +90,7 @@ func (c Configuration) Map(baseURI string) template.FuncMap {
 // Works for CSS and JS assets and determines if local or on the web by the
 // number of slashes at the beginning of the string. A prefix of // is web and
 // / is local.
-func (c Configuration) assetTimePath(baseURI, resource string) (string, error) {
+func (c Info) assetTimePath(baseURI, resource string) (string, error) {
 	if strings.HasPrefix(resource, "//") {
 		return resource, nil
 	}

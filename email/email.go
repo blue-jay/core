@@ -47,24 +47,12 @@ func Config() Info {
 	return info
 }
 
-// Configuration defines the shared configuration interface.
-type Configuration struct {
-	Info
-}
-
-// Shared returns the global configuration information.
-func Shared() Configuration {
-	return Configuration{
-		Config(),
-	}
-}
-
 // *****************************************************************************
 // Email Handling
 // *****************************************************************************
 
 // Send an email.
-func (c Configuration) Send(to, subject, body string) error {
+func (c Info) Send(to, subject, body string) error {
 	auth := smtp.PlainAuth("", c.Username, c.Password, c.Hostname)
 
 	// Create the header

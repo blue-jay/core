@@ -62,24 +62,12 @@ func Config() Info {
 	return info
 }
 
-// Configuration defines the shared configuration interface.
-type Configuration struct {
-	Info
-}
-
-// Shared returns the global configuration information.
-func Shared() Configuration {
-	return Configuration{
-		Config(),
-	}
-}
-
 // *****************************************************************************
 // Template Handling
 // *****************************************************************************
 
 // New accepts multiple templates and then returns a new view.
-func (c Configuration) New(templateList ...string) *Info {
+func (c Info) New(templateList ...string) *Info {
 	v := &Info{}
 	v.Vars = make(map[string]interface{})
 	v.BaseURI = c.BaseURI

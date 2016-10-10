@@ -92,7 +92,7 @@ func (c Configuration) New() (*migration.Info, error) {
 
 	// Connect to the database
 	database.SetConfig(i)
-	_, err := database.Shared().Connect(true)
+	_, err := database.Config().Connect(true)
 
 	// If the database doesn't exist or can't connect
 	if err != nil {
@@ -101,13 +101,13 @@ func (c Configuration) New() (*migration.Info, error) {
 		database.Disconnect()
 
 		// Connect to database without a database
-		_, err = database.Shared().Connect(false)
+		_, err = database.Config().Connect(false)
 		if err != nil {
 			return mig, err
 		}
 
 		// Create the database
-		err = database.Shared().Create()
+		err = database.Config().Create()
 		if err != nil {
 			return mig, err
 		}
@@ -116,7 +116,7 @@ func (c Configuration) New() (*migration.Info, error) {
 		database.Disconnect()
 
 		// Reconnect to the database
-		_, err = database.Shared().Connect(true)
+		_, err = database.Config().Connect(true)
 		if err != nil {
 			return mig, err
 		}
