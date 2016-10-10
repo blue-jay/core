@@ -50,7 +50,7 @@ func setup() *migration.Info {
 
 	// Connect to the database
 	mysql.SetConfig(info.MySQL)
-	mig, err := mysql.New()
+	mig, err := mysql.Shared().New()
 	if err != nil {
 		log.Fatalf("%v", err)
 	}

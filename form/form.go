@@ -53,6 +53,18 @@ func Config() Info {
 	return info
 }
 
+// Configuration defines the shared configuration interface.
+type Configuration struct {
+	Info
+}
+
+// Shared returns the global configuration information.
+func Shared() Configuration {
+	return Configuration{
+		Config(),
+	}
+}
+
 // *****************************************************************************
 // Form Handling
 // *****************************************************************************
@@ -79,7 +91,7 @@ func Repopulate(src url.Values, dst map[string]interface{}, list ...string) {
 }
 
 // UploadFile handles the file upload logic.
-func UploadFile(r *http.Request, name string, maxSize int64) (string, string, error) {
+func (c Configuration) UploadFile(r *http.Request, name string, maxSize int64) (string, string, error) {
 	file, handler, err := r.FormFile(name)
 	if err != nil {
 		return "", "", err
@@ -90,7 +102,7 @@ func UploadFile(r *http.Request, name string, maxSize int64) (string, string, er
 		return "", "", err
 	}
 
-	f, err := os.OpenFile(filepath.Join(Config().FileStorageFolder, fileID), os.O_WRONLY|os.O_CREATE, 0644)
+	f, err := os.OpenFile(filepath.Join(c.FileStorageFolder, fileID), os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return "", "", err
 	}

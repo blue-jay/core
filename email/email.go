@@ -47,17 +47,29 @@ func Config() Info {
 	return info
 }
 
+// Configuration defines the shared configuration interface.
+type Configuration struct {
+	Info
+}
+
+// Shared returns the global configuration information.
+func Shared() Configuration {
+	return Configuration{
+		Config(),
+	}
+}
+
 // *****************************************************************************
 // Email Handling
 // *****************************************************************************
 
 // Send mails an email.
-func Send(to, subject, body string) error {
-	auth := smtp.PlainAuth("", Config().Username, Config().Password, Config().Hostname)
+func (c Configuration) Send(to, subject, body string) error {
+	auth := smtp.PlainAuth("", c.Username, c.Password, c.Hostname)
 
 	// Create the header
 	header := make(map[string]string)
-	header["From"] = Config().From
+	header["From"] = c.From
 	header["To"] = to
 	header["Subject"] = subject
 	header["MIME-Version"] = "1.0"
@@ -73,9 +85,9 @@ func Send(to, subject, body string) error {
 
 	// Send the email
 	err := smtp.SendMail(
-		fmt.Sprintf("%s:%d", Config().Hostname, Config().Port),
+		fmt.Sprintf("%s:%d", c.Hostname, c.Port),
 		auth,
-		Config().From,
+		c.From,
 		[]string{to},
 		[]byte(message),
 	)

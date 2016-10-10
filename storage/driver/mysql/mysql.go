@@ -54,16 +54,28 @@ func ResetConfig() {
 	infoMutex.Unlock()
 }
 
+// Configuration defines the shared configuration interface.
+type Configuration struct {
+	Info
+}
+
+// Shared returns the global configuration information.
+func Shared() Configuration {
+	return Configuration{
+		Config(),
+	}
+}
+
 // *****************************************************************************
 // Database Handling
 // *****************************************************************************
 
 // Connect to the database.
-func Connect(specificDatabase bool) (*sqlx.DB, error) {
+func (c Configuration) Connect(specificDatabase bool) (*sqlx.DB, error) {
 	var err error
 
 	// Connect to database and ping
-	if SQL, err = sqlx.Connect("mysql", dsn(specificDatabase)); err != nil {
+	if SQL, err = sqlx.Connect("mysql", c.dsn(specificDatabase)); err != nil {
 		return SQL, err
 	}
 
@@ -76,9 +88,9 @@ func Disconnect() error {
 }
 
 // Create a new database.
-func Create() error {
+func (c Configuration) Create() error {
 	// Set defaults
-	ci := setDefaults()
+	ci := c.setDefaults()
 
 	// Create the database
 	_, err := SQL.Exec(fmt.Sprintf(`CREATE DATABASE %v
@@ -91,9 +103,9 @@ func Create() error {
 }
 
 // Drop a database.
-func Drop() error {
+func (c Configuration) Drop() error {
 	// Drop the database
-	_, err := SQL.Exec(fmt.Sprintf(`DROP DATABASE %v;`, Config().Database))
+	_, err := SQL.Exec(fmt.Sprintf(`DROP DATABASE %v;`, c.Database))
 	return err
 }
 
@@ -107,9 +119,9 @@ var (
 )
 
 // DSN returns the Data Source Name.
-func dsn(includeDatabase bool) string {
+func (c Configuration) dsn(includeDatabase bool) string {
 	// Set defaults
-	ci := setDefaults()
+	ci := c.setDefaults()
 
 	// Build parameters
 	param := ci.Parameter
@@ -149,8 +161,8 @@ func dsn(includeDatabase bool) string {
 }
 
 // setDefaults sets the charset and collation if they are not set.
-func setDefaults() Info {
-	ci := Config()
+func (c Configuration) setDefaults() Info {
+	ci := c.Info
 
 	if len(ci.Charset) == 0 {
 		ci.Charset = "utf8"

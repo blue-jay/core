@@ -46,6 +46,18 @@ func ResetConfig() {
 	infoMutex.Unlock()
 }
 
+// Configuration defines the shared configuration interface.
+type Configuration struct {
+	database.Info
+}
+
+// Shared returns the global configuration information.
+func Shared() Configuration {
+	return Configuration{
+		Config(),
+	}
+}
+
 // *****************************************************************************
 // Migration Creation
 // *****************************************************************************
@@ -55,11 +67,11 @@ var (
 )
 
 // New creates a migration connection to the database.
-func New() (*migration.Info, error) {
+func (c Configuration) New() (*migration.Info, error) {
 	var mig *migration.Info
 
 	// Load the config
-	i := Config()
+	i := c.Info
 
 	// Build the path to the mysql migration folder
 	projectRoot := filepath.Dir(os.Getenv("JAYCONFIG"))
@@ -80,7 +92,7 @@ func New() (*migration.Info, error) {
 
 	// Connect to the database
 	database.SetConfig(i)
-	_, err := database.Connect(true)
+	_, err := database.Shared().Connect(true)
 
 	// If the database doesn't exist or can't connect
 	if err != nil {
@@ -89,13 +101,13 @@ func New() (*migration.Info, error) {
 		database.Disconnect()
 
 		// Connect to database without a database
-		_, err = database.Connect(false)
+		_, err = database.Shared().Connect(false)
 		if err != nil {
 			return mig, err
 		}
 
 		// Create the database
-		err = database.Create()
+		err = database.Shared().Create()
 		if err != nil {
 			return mig, err
 		}
@@ -104,7 +116,7 @@ func New() (*migration.Info, error) {
 		database.Disconnect()
 
 		// Reconnect to the database
-		_, err = database.Connect(true)
+		_, err = database.Shared().Connect(true)
 		if err != nil {
 			return mig, err
 		}
@@ -247,7 +259,7 @@ func SetUp(envPath string, dbName string) {
 
 	// Connect to the database
 	SetConfig(info.MySQL)
-	mig, err := New()
+	mig, err := Shared().New()
 	if err != nil {
 		log.Fatalf("%v", err)
 	}

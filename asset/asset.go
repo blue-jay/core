@@ -48,17 +48,29 @@ func Config() Info {
 	return info
 }
 
+// Configuration defines the shared configuration interface.
+type Configuration struct {
+	Info
+}
+
+// Shared returns the global configuration information.
+func Shared() Configuration {
+	return Configuration{
+		Config(),
+	}
+}
+
 // *****************************************************************************
 // FuncMap for Template Packages
 // *****************************************************************************
 
 // Map returns a template.FuncMap. JS returns JavaScript tag with a
 // timestamp. CSS returns stylesheet tag with a timestamp.
-func Map(baseURI string) template.FuncMap {
+func (c Configuration) Map(baseURI string) template.FuncMap {
 	f := make(template.FuncMap)
 
 	f["JS"] = func(fpath string) template.HTML {
-		path, err := assetTimePath(baseURI, fpath)
+		path, err := c.assetTimePath(baseURI, fpath)
 
 		if err != nil {
 			log.Println("JS Error:", err)
@@ -69,7 +81,7 @@ func Map(baseURI string) template.FuncMap {
 	}
 
 	f["CSS"] = func(fpath, media string) template.HTML {
-		path, err := assetTimePath(baseURI, fpath)
+		path, err := c.assetTimePath(baseURI, fpath)
 
 		if err != nil {
 			log.Println("CSS Error:", err)
@@ -90,14 +102,14 @@ func Map(baseURI string) template.FuncMap {
 // Works for CSS and JS assets and determines if local or on the web by the
 // number of slashes at the beginning of the string. A prefix of // is web and
 // / is local.
-func assetTimePath(baseURI, resource string) (string, error) {
+func (c Configuration) assetTimePath(baseURI, resource string) (string, error) {
 	if strings.HasPrefix(resource, "//") {
 		return resource, nil
 	}
 
 	resource = strings.TrimLeft(resource, "/")
 
-	abs, err := filepath.Abs(filepath.Join(Config().Folder, resource))
+	abs, err := filepath.Abs(filepath.Join(c.Folder, resource))
 	if err != nil {
 		return "", err
 	}

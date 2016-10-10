@@ -62,19 +62,32 @@ func Config() Info {
 	return info
 }
 
+// Configuration defines the shared configuration interface.
+type Configuration struct {
+	Info
+}
+
+// Shared returns the global configuration information.
+func Shared() Configuration {
+	return Configuration{
+		Config(),
+	}
+}
+
 // *****************************************************************************
 // Template Handling
 // *****************************************************************************
 
 // New accepts multiple templates and then returns a new view.
-func New(templateList ...string) *Info {
+func (c Configuration) New(templateList ...string) *Info {
 	v := &Info{}
 	v.Vars = make(map[string]interface{})
-	v.BaseURI = Config().BaseURI
-	v.Extension = Config().Extension
-	v.Folder = Config().Folder
+	v.BaseURI = c.BaseURI
+	v.Extension = c.Extension
+	v.Folder = c.Folder
 	v.templates = append(v.templates, templateList...)
 	v.base = rootTemplate
+	v.Caching = c.Caching
 
 	return v
 }
@@ -113,7 +126,7 @@ func (v *Info) Render(w http.ResponseWriter, r *http.Request) error {
 	pc := extend()
 
 	// If the template collection is not cached or caching is disabled
-	if !ok || !Config().Caching {
+	if !ok || !v.Caching {
 		// Loop through each template and test the full path
 		for i, name := range v.templates {
 			// Get the absolute path of the root template
