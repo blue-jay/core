@@ -80,7 +80,7 @@ func New() (*migration.Info, error) {
 
 	// Connect to the database
 	database.SetConfig(i)
-	err := database.Connect(true)
+	_, err := database.Connect(true)
 
 	// If the database doesn't exist or can't connect
 	if err != nil {
@@ -89,7 +89,7 @@ func New() (*migration.Info, error) {
 		database.Disconnect()
 
 		// Connect to database without a database
-		err = database.Connect(false)
+		_, err = database.Connect(false)
 		if err != nil {
 			return mig, err
 		}
@@ -104,7 +104,7 @@ func New() (*migration.Info, error) {
 		database.Disconnect()
 
 		// Reconnect to the database
-		err = database.Connect(true)
+		_, err = database.Connect(true)
 		if err != nil {
 			return mig, err
 		}

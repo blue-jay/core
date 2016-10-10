@@ -58,16 +58,16 @@ func ResetConfig() {
 // *****************************************************************************
 
 // Connect to the database.
-func Connect(specificDatabase bool) error {
+func Connect(specificDatabase bool) (*sqlx.DB, error) {
 	var err error
 
 	// Connect to database and ping
 	if SQL, err = sqlx.Connect("postgres", dsn(specificDatabase)); err != nil {
-		return err
+		return SQL, err
 
 	}
 
-	return err
+	return SQL, err
 }
 
 // Disconnect the database connection.
