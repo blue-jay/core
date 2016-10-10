@@ -17,6 +17,7 @@ import (
 var (
 	info      Info
 	infoMutex sync.RWMutex
+	SQL       *sqlx.DB
 )
 
 // Info holds the details for the MySQL connection.
@@ -60,28 +61,17 @@ func ResetConfig() {
 
 // Connect to the database.
 func (c Info) Connect(specificDatabase bool) (*sqlx.DB, error) {
-	var err error
-
 	// Connect to database and ping
-	if SQL, err = sqlx.Connect("mysql", c.dsn(specificDatabase)); err != nil {
-		return SQL, err
-	}
-
-	return SQL, err
-}
-
-// Disconnect the database connection.
-func Disconnect() error {
-	return SQL.Close()
+	return sqlx.Connect("mysql", c.dsn(specificDatabase))
 }
 
 // Create a new database.
-func (c Info) Create() error {
+func (c Info) Create(sql *sqlx.DB) error {
 	// Set defaults
 	ci := c.setDefaults()
 
 	// Create the database
-	_, err := SQL.Exec(fmt.Sprintf(`CREATE DATABASE %v
+	_, err := sql.Exec(fmt.Sprintf(`CREATE DATABASE %v
 				DEFAULT CHARSET = %v
 				COLLATE = %v
 				;`, ci.Database,
@@ -91,20 +81,15 @@ func (c Info) Create() error {
 }
 
 // Drop a database.
-func (c Info) Drop() error {
+func (c Info) Drop(sql *sqlx.DB) error {
 	// Drop the database
-	_, err := SQL.Exec(fmt.Sprintf(`DROP DATABASE %v;`, c.Database))
+	_, err := sql.Exec(fmt.Sprintf(`DROP DATABASE %v;`, c.Database))
 	return err
 }
 
 // *****************************************************************************
 // MySQL Specific
 // *****************************************************************************
-
-var (
-	// SQL wrapper
-	SQL *sqlx.DB
-)
 
 // DSN returns the Data Source Name.
 func (c Info) dsn(includeDatabase bool) string {

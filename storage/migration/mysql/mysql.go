@@ -14,6 +14,7 @@ import (
 	"github.com/blue-jay/core/storage"
 	database "github.com/blue-jay/core/storage/driver/mysql"
 	"github.com/blue-jay/core/storage/migration"
+	"github.com/jmoiron/sqlx"
 )
 
 // *****************************************************************************
@@ -32,18 +33,18 @@ func SetConfig(i database.Info) {
 	infoMutex.Unlock()
 }
 
-// Config returns the config.
-func Config() database.Info {
-	infoMutex.RLock()
-	defer infoMutex.RUnlock()
-	return info
-}
-
 // ResetConfig removes the config.
 func ResetConfig() {
 	infoMutex.Lock()
 	info = database.Info{}
 	infoMutex.Unlock()
+}
+
+// Config returns the config.
+func Config() database.Info {
+	infoMutex.RLock()
+	defer infoMutex.RUnlock()
+	return info
 }
 
 // Configuration defines the shared configuration interface.
@@ -91,36 +92,38 @@ func (c Configuration) New() (*migration.Info, error) {
 	mi.UpdateConfig(&i)
 
 	// Connect to the database
-	database.SetConfig(i)
-	_, err := database.Config().Connect(true)
+	con, err := i.Connect(true)
 
 	// If the database doesn't exist or can't connect
 	if err != nil {
 		// Close the open connection (since 'unknown database' is still an
 		// active connection)
-		database.Disconnect()
+		con.Close()
 
 		// Connect to database without a database
-		_, err = database.Config().Connect(false)
+		con, err = i.Connect(false)
 		if err != nil {
 			return mig, err
 		}
 
 		// Create the database
-		err = database.Config().Create()
+		err = i.Create(con)
 		if err != nil {
 			return mig, err
 		}
 
 		// Close connection
-		database.Disconnect()
+		con.Close()
 
 		// Reconnect to the database
-		_, err = database.Config().Connect(true)
+		con, err = i.Connect(true)
 		if err != nil {
 			return mig, err
 		}
 	}
+
+	// Store the connection in the entity
+	mi.sql = con
 
 	// Setup logic was here
 	return migration.New(mi, folder)
@@ -132,7 +135,7 @@ func (c Configuration) New() (*migration.Info, error) {
 
 // Extension returns the file extension with a period
 func (t *Entity) Extension() string {
-	return "." + Config().Extension
+	return ".sql"
 }
 
 // UpdateConfig will update any parameters necessary
@@ -142,7 +145,7 @@ func (t *Entity) UpdateConfig(config *database.Info) {
 
 // TableExist returns true if the migration table exists
 func (t *Entity) TableExist() error {
-	_, err := database.SQL.Exec(fmt.Sprintf("SELECT 1 FROM %v LIMIT 1;", migrationTable))
+	_, err := t.sql.Exec(fmt.Sprintf("SELECT 1 FROM %v LIMIT 1;", migrationTable))
 	if err != nil {
 		return err
 	}
@@ -152,7 +155,7 @@ func (t *Entity) TableExist() error {
 
 // CreateTable returns true if the migration was created
 func (t *Entity) CreateTable() error {
-	_, err := database.SQL.Exec(fmt.Sprintf(`CREATE TABLE %v (
+	_, err := t.sql.Exec(fmt.Sprintf(`CREATE TABLE %v (
 		id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   		name VARCHAR(191) NOT NULL,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -170,7 +173,7 @@ func (t *Entity) CreateTable() error {
 // Status returns last migration name
 func (t *Entity) Status() (string, error) {
 	result := &Entity{}
-	err := database.SQL.Get(result, fmt.Sprintf("SELECT * FROM %v ORDER BY id DESC LIMIT 1;", migrationTable))
+	err := t.sql.Get(result, fmt.Sprintf("SELECT * FROM %v ORDER BY id DESC LIMIT 1;", migrationTable))
 
 	// If no rows, then set to nil
 	if err == sql.ErrNoRows {
@@ -181,27 +184,27 @@ func (t *Entity) Status() (string, error) {
 }
 
 // statusID returns last migration ID
-func statusID() (uint32, error) {
+func (t *Entity) statusID() (uint32, error) {
 	result := &Entity{}
-	err := database.SQL.Get(result, fmt.Sprintf("SELECT * FROM %v ORDER BY id DESC LIMIT 1;", migrationTable))
+	err := t.sql.Get(result, fmt.Sprintf("SELECT * FROM %v ORDER BY id DESC LIMIT 1;", migrationTable))
 	return result.ID, err
 }
 
 // Migrate runs a query and returns error
 func (t *Entity) Migrate(qry string) error {
-	_, err := database.SQL.Exec(qry)
+	_, err := t.sql.Exec(qry)
 	return err
 }
 
 // RecordUp adds a record to the database
 func (t *Entity) RecordUp(name string) error {
-	_, err := database.SQL.Exec(fmt.Sprintf("INSERT INTO %v (name) VALUES (?);", migrationTable), name)
+	_, err := t.sql.Exec(fmt.Sprintf("INSERT INTO %v (name) VALUES (?);", migrationTable), name)
 	return err
 }
 
 // RecordDown removes a record from the database and updates the AUTO_INCREMENT value
 func (t *Entity) RecordDown(name string) error {
-	_, err := database.SQL.Exec(fmt.Sprintf("DELETE FROM %v WHERE name = ? LIMIT 1;", migrationTable), name)
+	_, err := t.sql.Exec(fmt.Sprintf("DELETE FROM %v WHERE name = ? LIMIT 1;", migrationTable), name)
 
 	// If the record was removed successfully
 	if err == nil {
@@ -209,7 +212,7 @@ func (t *Entity) RecordDown(name string) error {
 		var nextID uint32 = 1
 
 		// Get the last migration record now
-		ID, err = statusID()
+		ID, err = t.statusID()
 
 		// If there are no more migrations in the table
 		if err == sql.ErrNoRows {
@@ -220,7 +223,7 @@ func (t *Entity) RecordDown(name string) error {
 			nextID = ID
 		}
 
-		_, err = database.SQL.Exec(fmt.Sprintf("ALTER TABLE %v AUTO_INCREMENT = %v;", migrationTable, nextID))
+		_, err = t.sql.Exec(fmt.Sprintf("ALTER TABLE %v AUTO_INCREMENT = %v;", migrationTable, nextID))
 	}
 	return err
 }
@@ -230,6 +233,7 @@ type Entity struct {
 	ID        uint32    `db:"id"`
 	Name      string    `db:"name"`
 	CreatedAt time.Time `db:"created_at"`
+	sql       *sqlx.DB
 }
 
 // *****************************************************************************
@@ -237,7 +241,7 @@ type Entity struct {
 // *****************************************************************************
 
 // SetUp is a function for unit tests on a separate database.
-func SetUp(envPath string, dbName string) {
+func SetUp(envPath string, dbName string) (*migration.Info, Configuration) {
 	// Get the environment variable
 	if len(os.Getenv("JAYCONFIG")) == 0 {
 		// Attempt to find env.json
@@ -251,15 +255,19 @@ func SetUp(envPath string, dbName string) {
 	}
 
 	// Load the config
-	info, err := storage.LoadConfig(os.Getenv("JAYCONFIG"))
+	config, err := storage.LoadConfig(os.Getenv("JAYCONFIG"))
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
-	info.MySQL.Database = dbName
+	config.MySQL.Database = dbName
 
-	// Connect to the database
-	SetConfig(info.MySQL)
-	mig, err := Shared().New()
+	// Create the migration configuration
+	conf := Configuration{
+		config.MySQL,
+	}
+
+	// Create the migration
+	mig, err := conf.New()
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
@@ -267,11 +275,13 @@ func SetUp(envPath string, dbName string) {
 	// Refresh the data
 	mig.DownAll()
 	mig.UpAll()
+
+	return mig, conf
 }
 
 // TearDown removes the unit test database.
-func TearDown() error {
+func TearDown(db *sqlx.DB, dbName string) error {
 	// Drop the database
-	_, err := database.SQL.Exec(fmt.Sprintf(`DROP DATABASE %v;`, Config().Database))
+	_, err := db.Exec(fmt.Sprintf(`DROP DATABASE %v;`, dbName))
 	return err
 }

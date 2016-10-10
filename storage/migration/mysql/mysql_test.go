@@ -10,13 +10,16 @@ import (
 	"testing"
 
 	"github.com/blue-jay/core/storage"
-	database "github.com/blue-jay/core/storage/driver/mysql"
+	//database "github.com/blue-jay/core/storage/driver/mysql"
 	"github.com/blue-jay/core/storage/migration"
 	"github.com/blue-jay/core/storage/migration/mysql"
+	"github.com/jmoiron/sqlx"
 )
 
 var (
 	migrationFolder = filepath.Join("migration_files")
+	conf            mysql.Configuration
+	con             Connection
 )
 
 // TestMain runs setup, tests, and then teardown.
@@ -33,14 +36,22 @@ func TestMain(m *testing.M) {
 		os.Setenv("JAYCONFIG", p)
 	}
 
+	// Load the config
+	conf = loadConfig()
+
+	// Connect to the database
+	db, _ := conf.Connect(true)
+	con = Connection{
+		db: db,
+	}
+
 	returnCode := m.Run()
 	teardown()
 	os.Exit(returnCode)
 }
 
-// setup handles any start up tasks.
-func setup() *migration.Info {
-	// Load the config
+// loadConfig will read the config from the env.json file
+func loadConfig() mysql.Configuration {
 	info, err := storage.LoadConfig(os.Getenv("JAYCONFIG"))
 	if err != nil {
 		log.Fatalf("%v", err)
@@ -49,14 +60,20 @@ func setup() *migration.Info {
 	info.MySQL.MigrationFolder = migrationFolder
 
 	// Connect to the database
-	mysql.SetConfig(info.MySQL)
-	mig, err := mysql.Shared().New()
+	return mysql.Configuration{
+		info.MySQL,
+	}
+}
+
+// setup handles any start up tasks.
+func setup() *migration.Info {
+	mig, err := conf.New()
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
 
 	// Remove table
-	deleteTable("test_brother")
+	con.deleteTable("test_brother")
 
 	// Remove the folder
 	err = os.RemoveAll(migrationFolder)
@@ -82,7 +99,7 @@ func teardown() {
 	}
 
 	// Remove the database
-	mysql.TearDown()
+	mysql.TearDown(con.db, "database_test")
 }
 
 // TestCreateTable.
@@ -155,7 +172,7 @@ func TestInsertRows(t *testing.T) {
 	}
 
 	// Test querying the data
-	result, _ := byID("1")
+	result, _ := con.byID("1")
 	if result.Name != "Joey" {
 		t.Errorf("record retrieved is incorrect: '%v'", result.Name)
 	}
@@ -187,7 +204,7 @@ func TestDeleteRows(t *testing.T) {
 	}
 
 	// Test querying the data
-	result, err := byID("1")
+	result, err := con.byID("1")
 	if result.Name != "Joey" {
 		t.Errorf("record retrieved is incorrect: '%v'", result.Name)
 	}
@@ -199,7 +216,7 @@ func TestDeleteRows(t *testing.T) {
 	}
 
 	// Test querying the data
-	result, _ = byID("1")
+	result, _ = con.byID("1")
 	if result.Name == "Joey" {
 		t.Errorf("record retrieved is incorrect: '%v'", result.Name)
 	}
@@ -231,7 +248,7 @@ func TestAlterRows(t *testing.T) {
 	mig.UpOne()
 
 	// Test querying the data
-	result, err := byID("1")
+	result, err := con.byID("1")
 	if result.Name != "Joey" {
 		t.Errorf("record retrieved is incorrect: '%v'", result.Name)
 	}
@@ -240,7 +257,7 @@ func TestAlterRows(t *testing.T) {
 	mig.DownOne()
 
 	// Test querying the data
-	result, err = byID("1")
+	result, err = con.byID("1")
 	if result.Name == "Joey" {
 		t.Errorf("record retrieved is incorrect: '%v'", result.Name)
 	}
@@ -256,7 +273,7 @@ func TestAlterRows(t *testing.T) {
 	mig.UpAll()
 
 	// Test querying the data
-	result, err = byID("1")
+	result, err = con.byID("1")
 	if result.Age != 0 {
 		t.Errorf("record retrieved is incorrect: '%v'", result.Age)
 	}
@@ -275,7 +292,7 @@ func TestAlterRows(t *testing.T) {
 	mig.UpAll()
 
 	// Test querying the data
-	result, _ = byID("1")
+	result, _ = con.byID("1")
 	if result.Age != 28 {
 		t.Errorf("record retrieved is incorrect: '%v'", result.Age)
 	}
@@ -284,7 +301,7 @@ func TestAlterRows(t *testing.T) {
 	mig.DownOne()
 
 	// Test querying the data
-	result, _ = byID("1")
+	result, _ = con.byID("1")
 	if result.Age == 28 {
 		t.Errorf("record retrieved is incorrect: '%v'", result.Age)
 	}
@@ -293,7 +310,7 @@ func TestAlterRows(t *testing.T) {
 	mig.UpOne()
 
 	// Test querying the data
-	result, _ = byID("1")
+	result, _ = con.byID("1")
 	if result.Age != 28 {
 		t.Errorf("record retrieved is incorrect: '%v'", result.Age)
 	}
@@ -310,16 +327,21 @@ type Entity struct {
 	Age  int    `db:"age"`
 }
 
+// Connection defines the shared database interface.
+type Connection struct {
+	db *sqlx.DB
+}
+
 // byID gets note by ID.
-func byID(ID string) (Entity, error) {
+func (c Connection) byID(ID string) (Entity, error) {
 	result := Entity{}
-	err := database.SQL.Get(&result, "SELECT * FROM test_brother WHERE id = ? LIMIT 1", ID)
+	err := c.db.Get(&result, "SELECT * FROM test_brother WHERE id = ? LIMIT 1", ID)
 	return result, err
 }
 
 // deleteTable drops a table.
-func deleteTable(table string) (sql.Result, error) {
-	result, err := database.SQL.Exec(fmt.Sprintf("DROP TABLE %v", table))
+func (c Connection) deleteTable(table string) (sql.Result, error) {
+	result, err := c.db.Exec(fmt.Sprintf("DROP TABLE %v", table))
 	return result, err
 }
 
