@@ -63,7 +63,7 @@ func Shared() Configuration {
 // Email Handling
 // *****************************************************************************
 
-// Send mails an email.
+// Send an email.
 func (c Configuration) Send(to, subject, body string) error {
 	auth := smtp.PlainAuth("", c.Username, c.Password, c.Hostname)
 
