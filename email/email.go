@@ -5,16 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/smtp"
-	"sync"
-)
-
-// *****************************************************************************
-// Thread-Safe Configuration
-// *****************************************************************************
-
-var (
-	info      Info
-	infoMutex sync.RWMutex
 )
 
 // Info holds the details for the SMTP server.
@@ -25,31 +15,6 @@ type Info struct {
 	Port     int
 	From     string
 }
-
-// SetConfig stores the config.
-func SetConfig(i Info) {
-	infoMutex.Lock()
-	info = i
-	infoMutex.Unlock()
-}
-
-// ResetConfig removes the config.
-func ResetConfig() {
-	infoMutex.Lock()
-	info = Info{}
-	infoMutex.Unlock()
-}
-
-// Config returns the config.
-func Config() Info {
-	infoMutex.RLock()
-	defer infoMutex.RUnlock()
-	return info
-}
-
-// *****************************************************************************
-// Email Handling
-// *****************************************************************************
 
 // Send an email.
 func (c Info) Send(to, subject, body string) error {

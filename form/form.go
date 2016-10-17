@@ -11,18 +11,11 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/blue-jay/core/uuid"
 )
 
-// *****************************************************************************
-// Thread-Safe Configuration
-// *****************************************************************************
-
 var (
-	info      Info
-	infoMutex sync.RWMutex
 	// ErrTooLarge is when the uploaded file is too large
 	ErrTooLarge = errors.New("File is too large.")
 )
@@ -30,27 +23,6 @@ var (
 // Info holds the details for the form handling.
 type Info struct {
 	FileStorageFolder string `json:"FileStorageFolder"`
-}
-
-// SetConfig stores the config.
-func SetConfig(i Info) {
-	infoMutex.Lock()
-	info = i
-	infoMutex.Unlock()
-}
-
-// ResetConfig removes the config.
-func ResetConfig() {
-	infoMutex.Lock()
-	info = Info{}
-	infoMutex.Unlock()
-}
-
-// Config returns the config.
-func Config() Info {
-	infoMutex.RLock()
-	defer infoMutex.RUnlock()
-	return info
 }
 
 // *****************************************************************************

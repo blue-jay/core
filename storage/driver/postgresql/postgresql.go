@@ -4,19 +4,9 @@ package postgresql
 import (
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // Postgres driver
-)
-
-// *****************************************************************************
-// Thread-Safe Configuration
-// *****************************************************************************
-
-var (
-	info      Info
-	infoMutex sync.RWMutex
 )
 
 // Info holds the details for the connection.
@@ -31,62 +21,28 @@ type Info struct {
 	Extension       string
 }
 
-// SetConfig stores the config.
-func SetConfig(i Info) {
-	infoMutex.Lock()
-	info = i
-	infoMutex.Unlock()
-}
-
-// Config returns the config.
-func Config() Info {
-	infoMutex.RLock()
-	defer infoMutex.RUnlock()
-	return info
-
-}
-
-// ResetConfig removes the config.
-func ResetConfig() {
-	infoMutex.Lock()
-	info = Info{}
-	infoMutex.Unlock()
-}
-
 // *****************************************************************************
 // Database Handling
 // *****************************************************************************
 
 // Connect to the database.
-func Connect(specificDatabase bool) (*sqlx.DB, error) {
-	var err error
-
+func (c Info) Connect(specificDatabase bool) (*sqlx.DB, error) {
 	// Connect to database and ping
-	if SQL, err = sqlx.Connect("postgres", dsn(specificDatabase)); err != nil {
-		return SQL, err
-
-	}
-
-	return SQL, err
-}
-
-// Disconnect the database connection.
-func Disconnect() error {
-	return SQL.Close()
+	return sqlx.Connect("postgres", c.dsn(specificDatabase))
 }
 
 // Create a new database.
-func Create() error {
+func (c Info) Create() error {
 	// Create the database
-	_, err := SQL.Exec(fmt.Sprintf(`CREATE DATABASE %v;`, Config().Database))
+	_, err := SQL.Exec(fmt.Sprintf(`CREATE DATABASE %v;`, c.Database))
 
 	return err
 }
 
 // Drop a database.
-func Drop() error {
+func (c Info) Drop(sql *sqlx.DB) error {
 	// Drop the database
-	_, err := SQL.Exec(fmt.Sprintf(`DROP DATABASE %v;`, Config().Database))
+	_, err := SQL.Exec(fmt.Sprintf(`DROP DATABASE %v;`, c.Database))
 
 	return err
 }
@@ -95,15 +51,10 @@ func Drop() error {
 // Database Specific
 // *****************************************************************************
 
-var (
-	// SQL wrapper
-	SQL *sqlx.DB
-)
-
 // DSN returns the Data Source Name.
-func dsn(includeDatabase bool) string {
+func (c Info) dsn(includeDatabase bool) string {
 	// Set defaults
-	ci := setDefaults()
+	ci := c.setDefaults()
 
 	// Build parameters
 	param := ci.Parameter
@@ -125,9 +76,9 @@ func dsn(includeDatabase bool) string {
 	return s
 }
 
-// setDefaults gets the default connection information.
-func setDefaults() Info {
-	ci := Config()
+// setDefaults sets the charset and collation if they are not set.
+func (c Info) setDefaults() Info {
+	ci := c
 
 	return ci
 }

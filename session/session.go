@@ -15,10 +15,11 @@ import (
 // *****************************************************************************
 
 var (
-	// store is the cookie store
-	store *sessions.CookieStore
 	// Name is the session name
-	Name      string
+	Name string
+
+	// store is the cookie store
+	store     *sessions.CookieStore
 	infoMutex sync.RWMutex
 )
 
@@ -57,23 +58,15 @@ func SetConfig(i Info) {
 	infoMutex.Unlock()
 }
 
-// Store returns the cookiestore
-func Store() *sessions.CookieStore {
-	infoMutex.RLock()
-	defer infoMutex.RUnlock()
-	return store
-}
-
 // *****************************************************************************
 // Session Handling
 // *****************************************************************************
 
-// Instance returns a new session and never returns an error, just displays one.
-func Instance(r *http.Request) *sessions.Session {
+// Instance returns a new session and an error if one occurred.
+func Instance(r *http.Request) (*sessions.Session, error) {
 	infoMutex.RLock()
-	session, _ := store.Get(r, Name)
-	infoMutex.RUnlock()
-	return session
+	defer infoMutex.RUnlock()
+	return store.Get(r, Name)
 }
 
 // Empty deletes all the current session values.

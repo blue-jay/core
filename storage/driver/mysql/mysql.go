@@ -4,20 +4,9 @@ package mysql
 import (
 	"fmt"
 	"strings"
-	"sync"
 
 	_ "github.com/go-sql-driver/mysql" // MySQL driver
 	"github.com/jmoiron/sqlx"
-)
-
-// *****************************************************************************
-// Thread-Safe Configuration
-// *****************************************************************************
-
-var (
-	info      Info
-	infoMutex sync.RWMutex
-	SQL       *sqlx.DB
 )
 
 // Info holds the details for the MySQL connection.
@@ -32,27 +21,6 @@ type Info struct {
 	Parameter       string
 	MigrationFolder string
 	Extension       string
-}
-
-// SetConfig stores the config.
-func SetConfig(i Info) {
-	infoMutex.Lock()
-	info = i
-	infoMutex.Unlock()
-}
-
-// Config returns the config.
-func Config() Info {
-	infoMutex.RLock()
-	defer infoMutex.RUnlock()
-	return info
-}
-
-// ResetConfig removes the config.
-func ResetConfig() {
-	infoMutex.Lock()
-	info = Info{}
-	infoMutex.Unlock()
 }
 
 // *****************************************************************************

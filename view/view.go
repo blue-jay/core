@@ -10,20 +10,6 @@ import (
 	"sync"
 )
 
-// *****************************************************************************
-// Thread-Safe Configuration
-// *****************************************************************************
-
-var (
-	childTemplates     []string
-	rootTemplate       string
-	templateCollection = make(map[string]*template.Template)
-	mutex              sync.RWMutex
-	sessionName        string
-	info               Info
-	infoMutex          sync.RWMutex
-)
-
 // Template holds the root and children templates.
 type Template struct {
 	Root     string   `json:"Root"`
@@ -36,30 +22,21 @@ type Info struct {
 	Extension string
 	Folder    string
 	Caching   bool
+
 	Vars      map[string]interface{}
 	base      string
 	templates []string
-}
 
-// SetConfig stores the config.
-func SetConfig(i Info) {
-	infoMutex.Lock()
-	info = i
-	infoMutex.Unlock()
-}
+	childTemplates []string
+	rootTemplate   string
 
-// ResetConfig removes the config.
-func ResetConfig() {
-	infoMutex.Lock()
-	info = Info{}
-	infoMutex.Unlock()
-}
+	extendList  template.FuncMap
+	modifyList  []ModifyFunc
+	extendMutex sync.RWMutex
+	modifyMutex sync.RWMutex
 
-// Config returns the config.
-func Config() Info {
-	infoMutex.RLock()
-	defer infoMutex.RUnlock()
-	return info
+	templateCollection map[string]*template.Template
+	mutex              sync.RWMutex
 }
 
 // *****************************************************************************
@@ -68,14 +45,10 @@ func Config() Info {
 
 // New accepts multiple templates and then returns a new view.
 func (c Info) New(templateList ...string) *Info {
-	v := &Info{}
+	v := &c
 	v.Vars = make(map[string]interface{})
-	v.BaseURI = c.BaseURI
-	v.Extension = c.Extension
-	v.Folder = c.Folder
 	v.templates = append(v.templates, templateList...)
-	v.base = rootTemplate
-	v.Caching = c.Caching
+	v.base = c.rootTemplate
 
 	return v
 }
@@ -97,7 +70,7 @@ func (v *Info) Render(w http.ResponseWriter, r *http.Request) error {
 	v.templates = append([]string{v.base}, v.templates...)
 
 	// Add the child templates
-	v.templates = append(v.templates, childTemplates...)
+	v.templates = append(v.templates, v.childTemplates...)
 
 	// Set the base template
 	baseTemplate := v.templates[0]
@@ -106,12 +79,12 @@ func (v *Info) Render(w http.ResponseWriter, r *http.Request) error {
 	key := strings.Join(v.templates, ":")
 
 	// Get the template collection from cache
-	mutex.RLock()
-	tc, ok := templateCollection[key]
-	mutex.RUnlock()
+	v.mutex.RLock()
+	tc, ok := v.templateCollection[key]
+	v.mutex.RUnlock()
 
 	// Get the extend list
-	pc := extend()
+	pc := v.extend()
 
 	// If the template collection is not cached or caching is disabled
 	if !ok || !v.Caching {
@@ -135,16 +108,16 @@ func (v *Info) Render(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		// Cache the template collection
-		mutex.Lock()
-		templateCollection[key] = templates
-		mutex.Unlock()
+		v.mutex.Lock()
+		v.templateCollection[key] = templates
+		v.mutex.Unlock()
 
 		// Save the template collection
 		tc = templates
 	}
 
 	// Get the modify list
-	sc := modify()
+	sc := v.modify()
 
 	// Loop through and call each one
 	for _, fn := range sc {

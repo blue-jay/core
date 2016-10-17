@@ -8,6 +8,7 @@ import (
 
 	"github.com/blue-jay/core/session"
 	"github.com/blue-jay/core/view"
+	"github.com/gorilla/sessions"
 )
 
 var (
@@ -35,10 +36,8 @@ func init() {
 }
 
 // SendFlashes allows retrieval of flash messages for using with Ajax.
-func SendFlashes(w http.ResponseWriter, r *http.Request) {
-	sess := session.Instance(r)
-
-	flashes := peekFlashes(w, r)
+func SendFlashes(w http.ResponseWriter, r *http.Request, sess *sessions.Session) {
+	flashes := peekFlashes(w, r, sess)
 	sess.Save(r, w)
 
 	js, err := json.Marshal(flashes)
@@ -52,9 +51,7 @@ func SendFlashes(w http.ResponseWriter, r *http.Request) {
 }
 
 // peekFlashes returns the flashes without destroying them.
-func peekFlashes(w http.ResponseWriter, r *http.Request) []Info {
-	sess := session.Instance(r)
-
+func peekFlashes(w http.ResponseWriter, r *http.Request, sess *sessions.Session) []Info {
 	var v []Info
 
 	// Get the flashes for the template
@@ -76,7 +73,7 @@ func peekFlashes(w http.ResponseWriter, r *http.Request) []Info {
 
 // Modify adds the flashes to the view.
 func Modify(w http.ResponseWriter, r *http.Request, v *view.Info) {
-	sess := session.Instance(r)
+	sess, _ := session.Instance(r)
 
 	// Get the flashes for the template
 	if flashes := sess.Flashes(); len(flashes) > 0 {

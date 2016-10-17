@@ -9,43 +9,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
-)
-
-// *****************************************************************************
-// Thread-Safe Configuration
-// *****************************************************************************
-
-var (
-	info      Info
-	infoMutex sync.RWMutex
 )
 
 // Info holds the config.
 type Info struct {
 	// Folder is the parent folder path for the asset folder
 	Folder string
-}
-
-// SetConfig stores the config.
-func SetConfig(i Info) {
-	infoMutex.Lock()
-	info = i
-	infoMutex.Unlock()
-}
-
-// ResetConfig removes the config.
-func ResetConfig() {
-	infoMutex.Lock()
-	info = Info{}
-	infoMutex.Unlock()
-}
-
-// Config returns the config.
-func Config() Info {
-	infoMutex.RLock()
-	defer infoMutex.RUnlock()
-	return info
 }
 
 // *****************************************************************************
