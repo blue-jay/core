@@ -284,8 +284,10 @@ func jsonFileToMap(file string) (map[string]interface{}, error) {
 // fromMapToFile will output a file by parsing a template and applying
 // variables from an interface map.
 func fromMapToFile(templateFile string, d map[string]interface{}, outputFile string) error {
+	base := filepath.Base(templateFile)
+
 	// Parse the template
-	t, err := template.ParseFiles(templateFile)
+	t, err := template.New(base).Funcs(funcmap()).ParseFiles(templateFile)
 	if err != nil {
 		return err
 	}
@@ -298,7 +300,8 @@ func fromMapToFile(templateFile string, d map[string]interface{}, outputFile str
 	defer f.Close()
 
 	// Fills template with variables and writes to file
-	err = t.Execute(f, d)
+	//err = t.Execute(f, d)
+	err = t.ExecuteTemplate(f, base, d)
 	if err != nil {
 		return err
 	}
@@ -360,12 +363,24 @@ func fillEmptyVariables(m, argMap map[string]interface{}) map[string]interface{}
 	return m
 }
 
+func funcmap() template.FuncMap {
+	// Function map
+	f := make(template.FuncMap)
+
+	// Add the ability to use strings.title in the template
+	f["title"] = func(s string) string {
+		return strings.Title(s)
+	}
+
+	return f
+}
+
 func parseTemplate(m map[string]interface{}, mapFileBytes []byte) (map[string]interface{}, bool) {
 	// Create the buffer
 	buf := new(bytes.Buffer)
 
 	// Parse the template
-	t, err := template.New("").Parse(string(mapFileBytes))
+	t, err := template.New("").Funcs(funcmap()).Parse(string(mapFileBytes))
 	if err != nil {
 		log.Fatal(err)
 	}
