@@ -32,9 +32,9 @@ func (c Info) Connect(specificDatabase bool) (*sqlx.DB, error) {
 }
 
 // Create a new database.
-func (c Info) Create() error {
+func (c Info) Create(sql *sqlx.DB) error {
 	// Create the database
-	_, err := SQL.Exec(fmt.Sprintf(`CREATE DATABASE %v;`, c.Database))
+	_, err := sql.Exec(fmt.Sprintf(`CREATE DATABASE %v;`, c.Database))
 
 	return err
 }
@@ -42,7 +42,7 @@ func (c Info) Create() error {
 // Drop a database.
 func (c Info) Drop(sql *sqlx.DB) error {
 	// Drop the database
-	_, err := SQL.Exec(fmt.Sprintf(`DROP DATABASE %v;`, c.Database))
+	_, err := sql.Exec(fmt.Sprintf(`DROP DATABASE %v;`, c.Database))
 
 	return err
 }
