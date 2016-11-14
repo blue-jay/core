@@ -11,6 +11,9 @@ go:
   - 1.7.3
   - tip
 
+services:
+  - mysql
+
 before_install:
   - go get github.com/axw/gocov/gocov
   - go get github.com/mattn/goveralls

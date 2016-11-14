@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/blue-jay/core/storage"
@@ -26,8 +27,16 @@ var (
 func TestMain(m *testing.M) {
 	// Get the environment variable
 	if len(os.Getenv("JAYCONFIG")) == 0 {
-		// Attempt to find env.json
-		p, err := filepath.Abs("testdata/envtest.json")
+
+		// For use with coveralls
+		file := "envtest.json"
+
+		// For use with docker on Windows
+		if runtime.GOOS == "windows" {
+			file = "envdocker.json"
+		}
+
+		p, err := filepath.Abs("testdata/" + file)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
