@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"log"
+	"strings"
 	"testing"
 
 	"github.com/blue-jay/core/asset"
@@ -52,10 +53,10 @@ func TestCSS(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := `<link media="all" rel="stylesheet" type="text/css" href="/test.css?1479090132" />`
+	expected := `<link media="all" rel="stylesheet" type="text/css" href="/test.css?`
 	received := buf.String()
 
-	if expected != received {
+	if strings.HasPrefix(expected, received) {
 		t.Errorf("\n got: %v\nwant: %v", received, expected)
 	}
 }
@@ -136,10 +137,10 @@ func TestJS(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := `<script type="text/javascript" src="/test.js?1479090783"></script>`
+	expected := `<script type="text/javascript" src="/test.js?`
 	received := buf.String()
 
-	if expected != received {
+	if strings.HasPrefix(expected, received) {
 		t.Errorf("\n got: %v\nwant: %v", received, expected)
 	}
 }
@@ -220,10 +221,10 @@ func TestBaseURI(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := `<link media="all" rel="stylesheet" type="text/css" href="/newbase/test.css?1479090132" />`
+	expected := `<link media="all" rel="stylesheet" type="text/css" href="/newbase/test.css?`
 	received := buf.String()
 
-	if expected != received {
+	if strings.HasPrefix(expected, received) {
 		t.Errorf("\n got: %v\nwant: %v", received, expected)
 	}
 }
