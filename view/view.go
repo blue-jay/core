@@ -44,12 +44,12 @@ type Info struct {
 // *****************************************************************************
 
 // New accepts multiple templates and then returns a new view.
-func (v Info) New(templateList ...string) *Info {
+func (v *Info) New(templateList ...string) *Info {
 	v.Vars = make(map[string]interface{})
 	v.templates = append(v.templates, templateList...)
 	v.base = v.rootTemplate
 
-	return &v
+	return v
 }
 
 // Base sets the new base template instead of reading from
