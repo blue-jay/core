@@ -181,7 +181,7 @@ func TestInsertRows(t *testing.T) {
 	}
 
 	// Test querying the data
-	result, _ := con.byID("2")
+	result, _ := con.byID("1")
 	if result.Name != "Joey" {
 		t.Errorf("record retrieved is incorrect: '%v'", result.Name)
 	}
