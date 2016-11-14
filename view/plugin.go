@@ -5,8 +5,6 @@ import (
 	"net/http"
 )
 
-var ()
-
 // extend safely reads the extend list.
 func (c *Info) extend() template.FuncMap {
 	c.extendMutex.RLock()
