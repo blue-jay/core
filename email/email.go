@@ -16,10 +16,8 @@ type Info struct {
 	From     string
 }
 
-// Send an email.
-func (c Info) Send(to, subject, body string) error {
-	auth := smtp.PlainAuth("", c.Username, c.Password, c.Hostname)
-
+// header generates a plaintext header for the email.
+func header(c Info, to, subject, body string) map[string]string {
 	// Create the header
 	header := make(map[string]string)
 	header["From"] = c.From
@@ -28,6 +26,17 @@ func (c Info) Send(to, subject, body string) error {
 	header["MIME-Version"] = "1.0"
 	header["Content-Type"] = `text/plain; charset="utf-8"`
 	header["Content-Transfer-Encoding"] = "base64"
+
+	return header
+}
+
+// Send an email.
+func (c Info) Send(to, subject, body string) error {
+	// Authentication for SMTP
+	auth := smtp.PlainAuth("", c.Username, c.Password, c.Hostname)
+
+	// Create header
+	header := header(c, to, subject, body)
 
 	// Set the message
 	message := ""
