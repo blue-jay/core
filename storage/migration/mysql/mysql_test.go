@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/blue-jay/core/storage"
-	//database "github.com/blue-jay/core/storage/driver/mysql"
 	"github.com/blue-jay/core/storage/migration"
 	"github.com/blue-jay/core/storage/migration/mysql"
+
 	"github.com/jmoiron/sqlx"
 )
 
@@ -27,7 +27,7 @@ func TestMain(m *testing.M) {
 	// Get the environment variable
 	if len(os.Getenv("JAYCONFIG")) == 0 {
 		// Attempt to find env.json
-		p, err := filepath.Abs("../../../../blueprint/env.json")
+		p, err := filepath.Abs("testdata/envtest.json")
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
