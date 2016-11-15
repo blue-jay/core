@@ -16,7 +16,7 @@ func init() {
 	log.SetOutput(ioutil.Discard)
 }
 
-// TestKeysExist ensures key exist.
+// TestKeysExist ensures keys exist.
 func TestKeysExist(t *testing.T) {
 	config := asset.Info{
 		Folder: "testdata",
@@ -56,7 +56,7 @@ func TestCSS(t *testing.T) {
 	expected := `<link media="all" rel="stylesheet" type="text/css" href="/test.css?`
 	received := buf.String()
 
-	if strings.HasPrefix(expected, received) {
+	if !strings.HasPrefix(received, expected) {
 		t.Errorf("\n got: %v\nwant: %v", received, expected)
 	}
 }
@@ -140,7 +140,7 @@ func TestJS(t *testing.T) {
 	expected := `<script type="text/javascript" src="/test.js?`
 	received := buf.String()
 
-	if strings.HasPrefix(expected, received) {
+	if !strings.HasPrefix(received, expected) {
 		t.Errorf("\n got: %v\nwant: %v", received, expected)
 	}
 }
@@ -224,7 +224,7 @@ func TestBaseURI(t *testing.T) {
 	expected := `<link media="all" rel="stylesheet" type="text/css" href="/newbase/test.css?`
 	received := buf.String()
 
-	if strings.HasPrefix(expected, received) {
+	if !strings.HasPrefix(received, expected) {
 		t.Errorf("\n got: %v\nwant: %v", received, expected)
 	}
 }
