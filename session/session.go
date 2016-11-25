@@ -3,24 +3,10 @@ package session
 
 import (
 	"encoding/base64"
-	"log"
+	"errors"
 	"net/http"
-	"sync"
 
 	"github.com/gorilla/sessions"
-)
-
-// *****************************************************************************
-// Thread-Safe Configuration
-// *****************************************************************************
-
-var (
-	// Name is the session name
-	Name string
-
-	// store is the cookie store
-	store     *sessions.CookieStore
-	infoMutex sync.RWMutex
 )
 
 // Info holds the session level information.
@@ -30,43 +16,43 @@ type Info struct {
 	AuthKey    string           `json:"AuthKey"`    // Key for: http://www.gorillatoolkit.org/pkg/sessions#NewCookieStore
 	EncryptKey string           `json:"EncryptKey"` // Key for: http://www.gorillatoolkit.org/pkg/sessions#NewCookieStore
 	CSRFKey    string           `json:"CSRFKey"`    // Key for: http://www.gorillatoolkit.org/pkg/csrf#Protect
+	store      *sessions.CookieStore
 }
 
-// SetConfig stores the config.
-func SetConfig(i Info) {
-	infoMutex.Lock()
+// Setup applies the config and returns an error if it cannot be setup.
+func (i *Info) SetupConfig() error {
+	// Check for AuthKey
+	if len(i.AuthKey) == 0 {
+		return errors.New("Session AuthKey is missing and is required as a good practice.")
+	}
 
 	// Decode authentication key
 	auth, err := base64.StdEncoding.DecodeString(i.AuthKey)
-	if err != nil {
-		log.Fatal(err)
+	if err != nil || len(auth) == 0 {
+		return err
 	}
 
-	// If the encrypt key is set
+	// If the auth key is not set, should error
 	if len(i.EncryptKey) > 0 {
 		// Decode the encrypt key
 		encrypt, err := base64.StdEncoding.DecodeString(i.EncryptKey)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
-		store = sessions.NewCookieStore(auth, encrypt)
+		i.store = sessions.NewCookieStore(auth, encrypt)
 	} else {
-		store = sessions.NewCookieStore(auth)
+		i.store = sessions.NewCookieStore(auth)
 	}
-	store.Options = &i.Options
-	Name = i.Name
-	infoMutex.Unlock()
+
+	return nil
 }
 
 // *****************************************************************************
 // Session Handling
 // *****************************************************************************
 
-// Instance returns a new session and an error if one occurred.
-func Instance(r *http.Request) (*sessions.Session, error) {
-	infoMutex.RLock()
-	defer infoMutex.RUnlock()
-	return store.Get(r, Name)
+func (i *Info) Instance(r *http.Request) (*sessions.Session, error) {
+	return i.store.Get(r, i.Name)
 }
 
 // Empty deletes all the current session values.

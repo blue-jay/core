@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/blue-jay/core/session"
-	"github.com/blue-jay/core/view"
 	"github.com/gorilla/sessions"
 )
 
@@ -72,24 +70,4 @@ func peekFlashes(w http.ResponseWriter, r *http.Request, sess *sessions.Session)
 	}
 
 	return v
-}
-
-// Modify adds the flashes to the view.
-func Modify(w http.ResponseWriter, r *http.Request, v *view.Info) {
-	sess, _ := session.Instance(r)
-
-	// Get the flashes for the template
-	if flashes := sess.Flashes(); len(flashes) > 0 {
-		v.Vars["flashes"] = make([]Info, len(flashes))
-		for i, f := range flashes {
-			switch f.(type) {
-			case Info:
-				v.Vars["flashes"].([]Info)[i] = f.(Info)
-			default:
-				v.Vars["flashes"].([]Info)[i] = Info{fmt.Sprint(f), Standard}
-			}
-
-		}
-		sess.Save(r, w)
-	}
 }
