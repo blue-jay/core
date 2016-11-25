@@ -55,3 +55,11 @@ func TestCopyFail(t *testing.T) {
 	// Clean up
 	os.Remove("testdata/temp.txt")
 }
+
+// TTestCopyMissing ensures the file to copy is missing.
+func TestCopyMissing(t *testing.T) {
+	err := file.Copy("testdata/test-missing.txt", "testdata/temp.txt")
+	if err == nil {
+		t.Fatal("Copy should have failed.")
+	}
+}

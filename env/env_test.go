@@ -49,3 +49,18 @@ func TestUpdateFile(t *testing.T) {
 	// Restore the file
 	ioutil.WriteFile(file, b1, 0644)
 }
+
+// TestMissingFile ensures the file is missing.
+func TestMissingFile(t *testing.T) {
+	file := "testdata/envtest-missing.json"
+
+	_, err := ioutil.ReadFile(file)
+	if err == nil {
+		t.Fatal(err)
+	}
+
+	err = env.UpdateFileKeys(file)
+	if err == nil {
+		t.Fatal(err)
+	}
+}

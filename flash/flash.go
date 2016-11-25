@@ -4,6 +4,7 @@ package flash
 import (
 	"encoding/gob"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/blue-jay/core/session"
@@ -20,6 +21,8 @@ var (
 	Notice = "alert-info"
 	// Warning is a bootstrap class
 	Warning = "alert-warning"
+	// Standard is the default class
+	Standard = "alert-box"
 )
 
 // Info Flash Message
@@ -62,7 +65,7 @@ func peekFlashes(w http.ResponseWriter, r *http.Request, sess *sessions.Session)
 			case Info:
 				v[i] = f.(Info)
 			default:
-				v[i] = Info{f.(string), "alert-box"}
+				v[i] = Info{fmt.Sprint(f), Standard}
 			}
 
 		}
@@ -83,7 +86,7 @@ func Modify(w http.ResponseWriter, r *http.Request, v *view.Info) {
 			case Info:
 				v.Vars["flashes"].([]Info)[i] = f.(Info)
 			default:
-				v.Vars["flashes"].([]Info)[i] = Info{f.(string), "alert-box"}
+				v.Vars["flashes"].([]Info)[i] = Info{fmt.Sprint(f), Standard}
 			}
 
 		}
