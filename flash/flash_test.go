@@ -33,7 +33,10 @@ func TestFlashSession(t *testing.T) {
 
 	// Simulate a request
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "http://localhost/foo", nil)
+	r, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	text := "Success test."
 
@@ -111,7 +114,10 @@ func TestModify(t *testing.T) {
 
 	// Simulate a request
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/", nil)
+	r, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	text := "Success test."
 
@@ -184,7 +190,10 @@ func TestModifyFail(t *testing.T) {
 
 	// Simulate a request
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/", nil)
+	r, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	text := "Success test."
 
@@ -258,7 +267,10 @@ func TestFlashDefault(t *testing.T) {
 
 	// Simulate a request
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/", nil)
+	r, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	text := "Just a string."
 
@@ -331,7 +343,10 @@ func TestSendFlashes(t *testing.T) {
 
 	// Simulate a request
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/", nil)
+	r, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	text := "Success test."
 
@@ -402,7 +417,10 @@ func TestNonStringFlash(t *testing.T) {
 
 	// Simulate a request
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/", nil)
+	r, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	text := 123
 
