@@ -35,7 +35,7 @@ env				91%
 file			100%
 find			89%
 flash			88%
-form			--
+form			73%
 generate		--
 jsonconfig		100%
 passhash		75%
