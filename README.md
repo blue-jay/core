@@ -26,24 +26,3 @@ available to Blueprint and Jay as well as other applications.
 
 Check the [milestones](https://github.com/blue-jay/core/milestones) for
 project status.
-
-## Tests
-
-asset			96%
-email			100%
-env				91%
-file			100%
-find			89%
-flash			88%
-form			73%
-generate		--
-jsonconfig		100%
-passhash		75%
-replace			--
-router			--
-server			16%
-session			100%
-storage			--
-uuid			80%
-view			--
-xsrf			--
