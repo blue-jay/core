@@ -63,3 +63,18 @@ func TestByteString(t *testing.T) {
 		t.Error("Password does not match")
 	}
 }
+
+// TestHashStringEmpty tests empty string which should pass fine.
+func TestHashStringEmpty(t *testing.T) {
+	plainText := ""
+
+	hash, err := HashString(plainText)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !MatchString(hash, plainText) {
+		t.Error("Password does not match")
+	}
+}

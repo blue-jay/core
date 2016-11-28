@@ -10,7 +10,6 @@
 package find
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -25,25 +24,49 @@ var (
 	flagName      *bool
 	flagRecursive *bool
 
+	contents []string // Buffer to hold lines of output
+
 	// MaxSize is the maximum size of a file Go will search through
-	MaxSize int64 = 1048576
+	MaxSize int64 = DefaultMaxSize()
 	// SkipFolders is folders that won't be searched
-	SkipFolders = []string{"vendor", "node_modules", ".git"}
+	SkipFolders = DefaultSkipFolders()
 )
 
-// Run starts the find filepath walk.
-func Run(text, folder, ext *string, recursive, filename *bool) error {
+// DefaultSkipFolders returns the folders that are skipped by default.
+func DefaultSkipFolders() []string {
+	return []string{"vendor", "node_modules", ".git"}
+}
+
+// DefaultMaxSize returns the default max filesize.
+func DefaultMaxSize() int64 {
+	return 1048576
+}
+
+// record writes the line to the string array.
+func record(line ...string) {
+	contents = append(contents, strings.Join(line, " "))
+}
+
+// Run starts the find filepath walk, will return the results in a string
+// array, and will reset the defaults for SkipFolders and MaxSize.
+func Run(text, folder, ext *string, recursive, filename *bool) ([]string, error) {
 	flagFind = text
 	flagFolder = folder
 	flagExt = ext
 	flagRecursive = recursive
 	flagName = filename
 
-	fmt.Println()
-	fmt.Println("Search Results")
-	fmt.Println("==============")
+	contents = []string{}
 
-	return filepath.Walk(*folder, visit)
+	record("Search Results")
+	record("==============")
+
+	err := filepath.Walk(*folder, visit)
+
+	// Reset the folders
+	SkipFolders = DefaultSkipFolders()
+
+	return contents, err
 }
 
 // Visit analyzes a file to see if it matches the parameters.
@@ -55,9 +78,20 @@ func visit(path string, fi os.FileInfo, err error) error {
 
 	// If path is a folder
 	if fi.IsDir() {
+		// Ignore specified folders
+		if inArray(fi.Name(), SkipFolders) {
+			return filepath.SkipDir
+		}
+
+		// If the folder name contains the search term, show the folder name
+		if *flagName && strings.Contains(fi.Name(), *flagFind) {
+			record("Filename:", path)
+		}
+
 		return folderCheck(fi)
 	}
 
+	// Determine if the extension matches the file
 	matched, err := filepath.Match(*flagExt, fi.Name())
 	if err != nil {
 		return err
@@ -67,30 +101,24 @@ func visit(path string, fi os.FileInfo, err error) error {
 	if matched {
 		// Skip file if too big
 		if fi.Size() > MaxSize {
-			fmt.Println("**ERROR: Skipping file too big", path)
+			record("**ERROR: Skipping file too big", path)
 			return nil
 		}
 
 		// Read the entire file into memory
 		read, err := ioutil.ReadFile(path)
 		if err != nil {
-			fmt.Println("**ERROR: Could not read from", path)
+			record("**ERROR: Could not read from", path)
 			return nil
 		}
 
 		// Convert the bytes array into a string
 		oldContents := string(read)
 
-		// If the file name contains the search term, replace the file name
-		if *flagName && strings.Contains(fi.Name(), *flagFind) {
-			oldpath := path
-			fmt.Println("Filename:", oldpath)
-		}
-
 		// If the file contains the search term
 		if strings.Contains(oldContents, *flagFind) {
 			count := strconv.Itoa(strings.Count(oldContents, *flagFind))
-			fmt.Println("Contents:", path, "("+count+")")
+			record("Contents:", path, "("+count+")")
 
 		}
 	}
@@ -104,13 +132,8 @@ func folderCheck(fi os.FileInfo) error {
 		return nil
 	}
 
-	// Ignore specified folders
-	if inArray(fi.Name(), SkipFolders) {
-		return filepath.SkipDir
-	}
-
 	// If recursive is true
-	if *flagRecursive {
+	if *flagRecursive || *flagFolder == fi.Name() {
 		return nil
 	}
 

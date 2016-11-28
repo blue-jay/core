@@ -65,6 +65,28 @@ func visit(path string, fi os.FileInfo, err error) error {
 
 	// If path is a folder
 	if fi.IsDir() {
+		// Ignore specified folders
+		if inArray(fi.Name(), SkipFolders) {
+			return filepath.SkipDir
+		}
+
+		// If the file name contains the search term, replace the file name
+		if *flagName && strings.Contains(fi.Name(), *flagFind) {
+			//TODO Fix the bug where if the folder AND file name match, it won't be changed
+			// Only change the filename, not the folder, or rename?
+			oldpath := path
+			path = strings.Replace(path, *flagFind, *flagReplace, -1)
+			fmt.Println(" Rename:", oldpath, "("+path+")")
+
+			if *flagCommit {
+				errRename := os.Rename(oldpath, path)
+				if errRename != nil {
+					fmt.Println("**ERROR: Could not rename", oldpath, "to", path)
+					return nil
+				}
+			}
+		}
+
 		return folderCheck(fi)
 	}
 
@@ -91,23 +113,6 @@ func visit(path string, fi os.FileInfo, err error) error {
 		// Convert the bytes array into a string
 		oldContents := string(read)
 
-		// If the file name contains the search term, replace the file name
-		if *flagName && strings.Contains(fi.Name(), *flagFind) {
-			//TODO Fix the bug where if the folder AND file name match, it won't be changed
-			// Only change the filename, not the folder, or rename?
-			oldpath := path
-			path = strings.Replace(path, *flagFind, *flagReplace, -1)
-			fmt.Println(" Rename:", oldpath, "("+path+")")
-
-			if *flagCommit {
-				errRename := os.Rename(oldpath, path)
-				if errRename != nil {
-					fmt.Println("**ERROR: Could not rename", oldpath, "to", path)
-					return nil
-				}
-			}
-		}
-
 		// If the file contains the search term
 		if strings.Contains(oldContents, *flagFind) {
 			// Replace the search term
@@ -133,11 +138,6 @@ func folderCheck(fi os.FileInfo) error {
 	// Always search current folder
 	if fi.Name() == "." {
 		return nil
-	}
-
-	// Ignore specified folders
-	if inArray(fi.Name(), SkipFolders) {
-		return filepath.SkipDir
 	}
 
 	// If recursive is true
