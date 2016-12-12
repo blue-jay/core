@@ -62,7 +62,7 @@ func TestSingle(t *testing.T) {
 }
 
 // TestSingleMissing ensures single file fails on a missing value.
-/*func TestSingleMissing(t *testing.T) {
+func TestSingleMissing(t *testing.T) {
 	// Set the variables
 	templateFolder := "testdata/generate"
 	actualFolder := "testdata/actual"
@@ -84,7 +84,7 @@ func TestSingle(t *testing.T) {
 	if err == nil {
 		t.Fatalf("%v", err)
 	}
-}*/
+}
 
 // TestSingleNoParse ensures single file can be generated without parsing.
 func TestSingleNoParse(t *testing.T) {

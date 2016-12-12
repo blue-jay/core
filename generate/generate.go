@@ -75,7 +75,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -116,7 +115,10 @@ func Run(args []string, projectFolder string, templateFolder string) error {
 		return fmt.Errorf("File doesn't exist: %v", jsonFilePath)
 	}
 
-	argMap := argsToMap(args)
+	argMap, err := argsToMap(args)
+	if err != nil {
+		return err
+	}
 
 	// Get the json file as a map - not parsed
 	mapFile, err := jsonFileToMap(jsonFilePath)
@@ -125,7 +127,10 @@ func Run(args []string, projectFolder string, templateFolder string) error {
 	}
 
 	// Generate variable map
-	variableMap := generateVariableMap(mapFile, argMap)
+	variableMap, err := generateVariableMap(mapFile, argMap)
+	if err != nil {
+		return err
+	}
 
 	// Check for config type
 	configType, ok := variableMap["config.type"]
@@ -140,9 +145,9 @@ func Run(args []string, projectFolder string, templateFolder string) error {
 		genFilePath := filepath.Join(templateFolder, args[0]+".gen")
 
 		// Generate the template
-		generateSingle(projectFolder, genFilePath, variableMap)
+		return generateSingle(projectFolder, genFilePath, variableMap)
 	case "collection":
-		generateCollection(projectFolder, templateFolder, variableMap)
+		return generateCollection(projectFolder, templateFolder, variableMap)
 	default:
 		return fmt.Errorf("Value of '%v' for key 'config.type' is not supported", configType)
 	}
@@ -150,29 +155,29 @@ func Run(args []string, projectFolder string, templateFolder string) error {
 	return nil
 }
 
-func generateCollection(projectFolder string, templateFolder string, variableMap map[string]interface{}) {
+func generateCollection(projectFolder string, templateFolder string, variableMap map[string]interface{}) error {
 	// Check for required key
 	collectionRaw, ok := variableMap["config.collection"]
 	if !ok {
-		log.Fatal("Key, 'config.collection', is missing from the .json file")
+		return errors.New("Key, 'config.collection', is missing from the .json file")
 	}
 
 	collection, ok := collectionRaw.([]interface{})
 	if !ok {
-		log.Fatal("Key, 'config.collection', is not in the correct format")
+		return errors.New("Key, 'config.collection', is not in the correct format")
 	}
 
 	// Loop through the collections
 	for i, v := range collection {
 		vMap, ok := v.(map[string]interface{})
 		if !ok {
-			log.Fatal("Values for key, 'config.collection', are not in the correct format")
+			return errors.New("Values for key, 'config.collection', are not in the correct format")
 		}
 
 		for name, varArray := range vMap {
 			argMap, ok := varArray.(map[string]interface{})
 			if !ok {
-				log.Fatalf("Item at index '%v' for key, 'config.collection', is not in the correct format", i)
+				return errors.New(fmt.Sprintf("Item at index '%v' for key, 'config.collection', is not in the correct format", i))
 			}
 
 			// Template File
@@ -182,35 +187,46 @@ func generateCollection(projectFolder string, templateFolder string, variableMap
 			// Get the json file as a map - not parsed
 			mapFile, err := jsonFileToMap(jsonFilePath)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 
 			// Generate variable map
-			variableMap := generateVariableMap(mapFile, argMap)
+			variableMap, err := generateVariableMap(mapFile, argMap)
+			if err != nil {
+				return err
+			}
 
 			// Check for config type
 			configType, ok := variableMap["config.type"]
 			if !ok {
-				log.Fatal("Key, 'config.type', is missing from the .json file")
+				return errors.New("Key, 'config.type', is missing from the .json file")
 			}
 
 			// Handle based on config.type
 			switch configType {
 			case "single":
-				generateSingle(projectFolder, genFilePath, variableMap)
+				err = generateSingle(projectFolder, genFilePath, variableMap)
+				if err != nil {
+					return err
+				}
 			case "collection":
-				generateCollection(projectFolder, templateFolder, variableMap)
+				err = generateCollection(projectFolder, templateFolder, variableMap)
+				if err != nil {
+					return err
+				}
 			default:
-				log.Fatalf("Value of '%v' for key 'config.type' is not supported", configType)
+				return fmt.Errorf("Value of '%v' for key 'config.type' is not supported", configType)
 			}
 		}
 	}
+
+	return nil
 }
 
-func generateSingle(projectFolder string, genFilePath string, variableMap map[string]interface{}) {
+func generateSingle(projectFolder string, genFilePath string, variableMap map[string]interface{}) error {
 	// Check for required key
 	if _, ok := variableMap["config.output"]; !ok {
-		log.Fatal("Key, 'config.output', is missing from the .json file")
+		return errors.New("Key, 'config.output', is missing from the .json file")
 	}
 
 	// Output file
@@ -219,7 +235,7 @@ func generateSingle(projectFolder string, genFilePath string, variableMap map[st
 
 	// Check if the file exists
 	if file.Exists(outputFile) {
-		log.Fatalf("Cannot generate because file already exists: %v", outputFile)
+		return fmt.Errorf("Cannot generate because file already exists: %v", outputFile)
 	}
 
 	// Check if the folder exists
@@ -227,7 +243,7 @@ func generateSingle(projectFolder string, genFilePath string, variableMap map[st
 	if !file.Exists(dir) {
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
-			log.Fatalln(err)
+			return err
 		}
 	}
 
@@ -237,20 +253,22 @@ func generateSingle(projectFolder string, genFilePath string, variableMap map[st
 			// Don't parse template, just copy to new file
 			err := toFile(genFilePath, outputFile)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 			fmt.Println("Code generated:", outputFile)
-			return
+			return nil
 		}
 	}
 
 	// Parse template and write to file
 	err := fromMapToFile(genFilePath, variableMap, outputFile)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	fmt.Println("Code generated:", outputFile)
+
+	return nil
 }
 
 func cloneMap(originalMap map[string]interface{}) map[string]interface{} {
@@ -325,23 +343,23 @@ func toFile(templateFile string, outputFile string) error {
 	return nil
 }
 
-func argsToMap(args []string) map[string]interface{} {
+func argsToMap(args []string) (map[string]interface{}, error) {
 	// Fill a new map with variables
 	argMap := make(map[string]interface{})
 	for _, a := range args[1:] {
 		arr := strings.Split(a, ":")
 
 		if len(arr) < 2 {
-			log.Fatalf("Arg is in wrong format: %v", a)
+			return nil, errors.New(fmt.Sprintf("Arg is in wrong format: %v", a))
 		}
 
 		argMap[arr[0]] = strings.Join(arr[1:], ":")
 	}
 
-	return argMap
+	return argMap, nil
 }
 
-func fillEmptyVariables(m, argMap map[string]interface{}) map[string]interface{} {
+func fillEmptyVariables(m, argMap map[string]interface{}) (map[string]interface{}, error) {
 	// Loop through the map to fill empty variables
 	for s, v := range m {
 		switch t := v.(type) {
@@ -350,7 +368,7 @@ func fillEmptyVariables(m, argMap map[string]interface{}) map[string]interface{}
 				if val, ok := argMap[s]; ok {
 					m[s] = val
 				} else {
-					log.Fatalf("Variable missing: %v", s)
+					return nil, errors.New(fmt.Sprintf("Variable missing: %v", s))
 				}
 			} else { // Else delete any values that are not empty
 				delete(m, s)
@@ -360,7 +378,7 @@ func fillEmptyVariables(m, argMap map[string]interface{}) map[string]interface{}
 		}
 	}
 
-	return m
+	return m, nil
 }
 
 func funcmap() template.FuncMap {
@@ -375,20 +393,20 @@ func funcmap() template.FuncMap {
 	return f
 }
 
-func parseTemplate(m map[string]interface{}, mapFileBytes []byte) (map[string]interface{}, bool) {
+func parseTemplate(m map[string]interface{}, mapFileBytes []byte) (map[string]interface{}, bool, error) {
 	// Create the buffer
 	buf := new(bytes.Buffer)
 
 	// Parse the template
 	t, err := template.New("").Funcs(funcmap()).Parse(string(mapFileBytes))
 	if err != nil {
-		log.Fatal(err)
+		return nil, true, err
 	}
 
 	// Fills template with variables
 	err = t.Execute(buf, m)
 	if err != nil {
-		log.Fatal(err)
+		return nil, true, err
 	}
 
 	parsedTemplate := buf.Bytes()
@@ -396,7 +414,7 @@ func parseTemplate(m map[string]interface{}, mapFileBytes []byte) (map[string]in
 	// Convert the json text back to a map
 	err = json.Unmarshal(parsedTemplate, &m)
 	if err != nil {
-		log.Fatal(err)
+		return nil, true, err
 	}
 
 	breakNow := false
@@ -407,17 +425,22 @@ func parseTemplate(m map[string]interface{}, mapFileBytes []byte) (map[string]in
 		breakNow = true
 	}
 
-	return m, breakNow
+	return m, breakNow, nil
 }
 
 // generateVariableMap returns the relative file output path and the map of
 // variables.
-func generateVariableMap(mapFile map[string]interface{}, argMap map[string]interface{}) map[string]interface{} {
+func generateVariableMap(mapFile map[string]interface{}, argMap map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+
 	// Clone map
 	m := cloneMap(mapFile)
 
 	// Fill empty variables of map
-	m = fillEmptyVariables(m, argMap)
+	m, err = fillEmptyVariables(m, argMap)
+	if err != nil {
+		return nil, err
+	}
 
 	// Look through the map of the file and update it with the variables
 	for s := range mapFile {
@@ -441,14 +464,14 @@ func generateVariableMap(mapFile map[string]interface{}, argMap map[string]inter
 		// Convert the mapFile to bytes
 		mapFileBytes, err := json.Marshal(mapFile)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 
 		// Parse template to determine if all the variables are passed and
 		// then break
 		var breakNow bool
-		m, breakNow = parseTemplate(m, mapFileBytes)
-		if breakNow {
+		m, breakNow, err = parseTemplate(m, mapFileBytes)
+		if breakNow || err != nil {
 			break
 		}
 
@@ -475,10 +498,10 @@ func generateVariableMap(mapFile map[string]interface{}, argMap map[string]inter
 		counter++
 
 		if counter > LoopLimit {
-			log.Fatalf("Check these keys for variable mistakes: %v", invalidKeys)
+			return nil, fmt.Errorf("Check these keys for variable mistakes: %v", invalidKeys)
 			break
 		}
 	}
 
-	return m
+	return m, err
 }
