@@ -26,6 +26,7 @@ func init() {
 // ResetConfig creates a new instance.
 func ResetConfig() {
 	infoMutex.Lock()
+	routeList = []string{}
 	r = vestigo.NewRouter()
 	infoMutex.Unlock()
 }

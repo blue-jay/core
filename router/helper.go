@@ -40,45 +40,40 @@ func RouteList() []string {
 
 // Delete is a shortcut for router.Handle("DELETE", path, handle).
 func Delete(path string, fn http.HandlerFunc, c ...alice.Constructor) {
-	record("DELETE", path)
-
 	infoMutex.Lock()
+	record("DELETE", path)
 	r.Delete(path, alice.New(c...).ThenFunc(fn).(http.HandlerFunc))
 	infoMutex.Unlock()
 }
 
 // Get is a shortcut for router.Handle("GET", path, handle).
 func Get(path string, fn http.HandlerFunc, c ...alice.Constructor) {
-	record("GET", path)
-
 	infoMutex.Lock()
+	record("GET", path)
 	r.Get(path, alice.New(c...).ThenFunc(fn).(http.HandlerFunc))
 	infoMutex.Unlock()
 }
 
 // Patch is a shortcut for router.Handle("PATCH", path, handle).
 func Patch(path string, fn http.HandlerFunc, c ...alice.Constructor) {
-	record("PATCH", path)
-
 	infoMutex.Lock()
+	record("PATCH", path)
 	r.Patch(path, alice.New(c...).ThenFunc(fn).(http.HandlerFunc))
 	infoMutex.Unlock()
 }
 
 // Post is a shortcut for router.Handle("POST", path, handle).
 func Post(path string, fn http.HandlerFunc, c ...alice.Constructor) {
-	record("POST", path)
-
 	infoMutex.Lock()
+	record("POST", path)
 	r.Post(path, alice.New(c...).ThenFunc(fn).(http.HandlerFunc))
 	infoMutex.Unlock()
 }
 
 // Put is a shortcut for router.Handle("PUT", path, handle).
 func Put(path string, fn http.HandlerFunc, c ...alice.Constructor) {
-	record("PUT", path)
-
 	infoMutex.Lock()
+	record("PUT", path)
 	r.Put(path, alice.New(c...).ThenFunc(fn).(http.HandlerFunc))
 	infoMutex.Unlock()
 }
