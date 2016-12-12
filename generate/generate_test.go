@@ -86,6 +86,37 @@ func TestSingleMissing(t *testing.T) {
 	}
 }
 
+// TestSingleBad ensures single file generates, but displays "<no value>" if the
+// variable was not in the .json file.
+func TestSingleBad(t *testing.T) {
+	// Set the variables
+	templateFolder := "testdata/generate"
+	actualFolder := "testdata/actual"
+	expectedFolder := "testdata/expected"
+	file := "model/bad/bad.go"
+	fileActual := filepath.Join(actualFolder, file)
+	fileExpected := filepath.Join(expectedFolder, file)
+
+	// Set the arguments
+	args := []string{
+		"single/bad",
+		"package:bad",
+		//"table:bar",
+	}
+
+	// Clear out files from old tests
+	os.Remove(fileActual)
+
+	// Generate the code
+	err := generate.Run(args, actualFolder, templateFolder)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// Ensure the files are the same
+	fileAssertSame(t, fileActual, fileExpected)
+}
+
 // TestSingleNoParse ensures single file can be generated without parsing.
 func TestSingleNoParse(t *testing.T) {
 	// Set the variables
@@ -151,4 +182,23 @@ func TestCollection(t *testing.T) {
 	// Ensure the files are the same
 	fileAssertSame(t, fileActual1, fileExpected1)
 	fileAssertSame(t, fileActual2, fileExpected2)
+}
+
+// TestCollectionBad ensures the collection generation fails.
+func TestCollectionBad(t *testing.T) {
+	// Set the variables
+	templateFolder := "testdata/generate"
+	actualFolder := "testdata/actual"
+
+	// Set the arguments
+	args := []string{
+		"collection/bad",
+		"model:bad",
+	}
+
+	// Generate the code
+	err := generate.Run(args, actualFolder, templateFolder)
+	if err == nil {
+		t.Fatalf("%v", err)
+	}
 }
