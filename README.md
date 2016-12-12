@@ -29,6 +29,7 @@ project status.
 
 ## Code Coverage
 
+```
 asset			96%
 email			100%
 env				91%
@@ -47,3 +48,4 @@ storage			--
 uuid			80%
 view			94%
 xsrf			100%
+```
