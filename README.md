@@ -40,7 +40,7 @@ generate		--
 jsonconfig		100%
 passhash		75%
 replace			--
-router			--
+router			100%
 server			16%
 session			100%
 storage			--
