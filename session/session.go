@@ -19,7 +19,7 @@ type Info struct {
 	store      *sessions.CookieStore
 }
 
-// Setup applies the config and returns an error if it cannot be setup.
+// SetupConfig applies the config and returns an error if it cannot be setup.
 func (i *Info) SetupConfig() error {
 	// Check for AuthKey
 	if len(i.AuthKey) == 0 {
@@ -51,6 +51,7 @@ func (i *Info) SetupConfig() error {
 // Session Handling
 // *****************************************************************************
 
+// Instance returns and instance of the store.
 func (i *Info) Instance(r *http.Request) (*sessions.Session, error) {
 	return i.store.Get(r, i.Name)
 }

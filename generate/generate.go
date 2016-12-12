@@ -151,8 +151,6 @@ func Run(args []string, projectFolder string, templateFolder string) error {
 	default:
 		return fmt.Errorf("Value of '%v' for key 'config.type' is not supported", configType)
 	}
-
-	return nil
 }
 
 func generateCollection(projectFolder string, templateFolder string, variableMap map[string]interface{}) error {
@@ -177,7 +175,7 @@ func generateCollection(projectFolder string, templateFolder string, variableMap
 		for name, varArray := range vMap {
 			argMap, ok := varArray.(map[string]interface{})
 			if !ok {
-				return errors.New(fmt.Sprintf("Item at index '%v' for key, 'config.collection', is not in the correct format", i))
+				return fmt.Errorf("Item at index '%v' for key, 'config.collection', is not in the correct format", i)
 			}
 
 			// Template File
@@ -350,7 +348,7 @@ func argsToMap(args []string) (map[string]interface{}, error) {
 		arr := strings.Split(a, ":")
 
 		if len(arr) < 2 {
-			return nil, errors.New(fmt.Sprintf("Arg is in wrong format: %v", a))
+			return nil, fmt.Errorf("Arg is in wrong format: %v", a)
 		}
 
 		argMap[arr[0]] = strings.Join(arr[1:], ":")
@@ -368,7 +366,7 @@ func fillEmptyVariables(m, argMap map[string]interface{}) (map[string]interface{
 				if val, ok := argMap[s]; ok {
 					m[s] = val
 				} else {
-					return nil, errors.New(fmt.Sprintf("Variable missing: %v", s))
+					return nil, fmt.Errorf("Variable missing: %v", s)
 				}
 			} else { // Else delete any values that are not empty
 				delete(m, s)
@@ -499,7 +497,6 @@ func generateVariableMap(mapFile map[string]interface{}, argMap map[string]inter
 
 		if counter > LoopLimit {
 			return nil, fmt.Errorf("Check these keys for variable mistakes: %v", invalidKeys)
-			break
 		}
 	}
 
