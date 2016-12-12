@@ -46,4 +46,4 @@ session			100%
 storage			--
 uuid			80%
 view			94%
-xsrf			--
+xsrf			100%
