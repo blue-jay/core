@@ -37,7 +37,7 @@ file			100%
 find			89%
 flash			88%
 form			73%
-generate		76%
+generate		88%
 jsonconfig		100%
 passhash		75%
 replace			--
