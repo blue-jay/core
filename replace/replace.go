@@ -11,7 +11,6 @@
 package replace
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -28,14 +27,31 @@ var (
 	flagRecursive *bool
 	flagCommit    *bool
 
+	contents []string // Buffer to hold lines of output
+
 	// MaxSize is the maximum size of a file Go will search through
-	MaxSize int64 = 1048576
+	MaxSize int64 = DefaultMaxSize()
 	// SkipFolders is folders that won't be searched
-	SkipFolders = []string{"vendor", "node_modules", ".git"}
+	SkipFolders = DefaultSkipFolders()
 )
 
+// DefaultSkipFolders returns the folders that are skipped by default.
+func DefaultSkipFolders() []string {
+	return []string{"vendor", "node_modules", ".git"}
+}
+
+// DefaultMaxSize returns the default max filesize.
+func DefaultMaxSize() int64 {
+	return 1048576
+}
+
+// record writes the line to the string array.
+func record(line ...string) {
+	contents = append(contents, strings.Join(line, " "))
+}
+
 // Run starts the replace filepath walk.
-func Run(find, folder, replace, ext *string, recursive, filename, commit *bool) error {
+func Run(find, folder, replace, ext *string, recursive, filename, commit *bool) ([]string, error) {
 	flagFind = find
 	flagFolder = folder
 	flagReplace = replace
@@ -44,16 +60,22 @@ func Run(find, folder, replace, ext *string, recursive, filename, commit *bool) 
 	flagName = filename
 	flagCommit = commit
 
-	fmt.Println()
+	contents = []string{}
+
 	if *flagCommit {
-		fmt.Println("Replace Results")
-		fmt.Println("===============")
+		record("Replace Results")
+		record("===============")
 	} else {
-		fmt.Println("Replace Results (no changes)")
-		fmt.Println("============================")
+		record("Replace Results (no changes)")
+		record("============================")
 	}
 
-	return filepath.Walk(".", visit)
+	err := filepath.Walk(*folder, visit)
+
+	// Reset the folders
+	SkipFolders = DefaultSkipFolders()
+
+	return contents, err
 }
 
 // Visit analyzes a file to see if it matches the parameters.
@@ -76,12 +98,12 @@ func visit(path string, fi os.FileInfo, err error) error {
 			// Only change the filename, not the folder, or rename?
 			oldpath := path
 			path = strings.Replace(path, *flagFind, *flagReplace, -1)
-			fmt.Println(" Rename:", oldpath, "("+path+")")
+			record(" Rename:", oldpath, "("+path+")")
 
 			if *flagCommit {
 				errRename := os.Rename(oldpath, path)
 				if errRename != nil {
-					fmt.Println("**ERROR: Could not rename", oldpath, "to", path)
+					record("**ERROR: Could not rename", oldpath, "to", path)
 					return nil
 				}
 			}
@@ -99,14 +121,14 @@ func visit(path string, fi os.FileInfo, err error) error {
 	if matched {
 		// Skip file if too big
 		if fi.Size() > MaxSize {
-			fmt.Println("**ERROR: Skipping file too big", path)
+			record("**ERROR: Skipping file too big", path)
 			return nil
 		}
 
 		// Read the entire file into memory
 		read, err := ioutil.ReadFile(path)
 		if err != nil {
-			fmt.Println("**ERROR: Could not read from", path)
+			record("**ERROR: Could not read from", path)
 			return nil
 		}
 
@@ -118,13 +140,13 @@ func visit(path string, fi os.FileInfo, err error) error {
 			// Replace the search term
 			newContents := strings.Replace(oldContents, *flagFind, *flagReplace, -1)
 			count := strconv.Itoa(strings.Count(oldContents, *flagFind))
-			fmt.Println("Replace:", path, "("+count+")")
+			record("Replace:", path, "("+count+")")
 
 			// Write the data back to the file
 			if *flagCommit {
 				err = ioutil.WriteFile(path, []byte(newContents), 0)
 				if err != nil {
-					fmt.Println("**ERROR: Could not write to", path)
+					record("**ERROR: Could not write to", path)
 					return nil
 				}
 			}
@@ -141,7 +163,7 @@ func folderCheck(fi os.FileInfo) error {
 	}
 
 	// If recursive is true
-	if *flagRecursive {
+	if *flagRecursive || *flagFolder == fi.Name() {
 		return nil
 	}
 

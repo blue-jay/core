@@ -1,6 +1,7 @@
 package find_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/blue-jay/core/find"
@@ -28,7 +29,7 @@ func TestRun(t *testing.T) {
 		t.Errorf("\n got: %v\nwant: %v", received, expected)
 	}
 
-	expectedS := "Contents: testdata/test1.go (1)"
+	expectedS := "Contents: testdata" + string(os.PathSeparator) + "test1.go (1)"
 	receivedS := results[0]
 
 	if expectedS != receivedS {
@@ -89,7 +90,7 @@ func TestNoRecursive(t *testing.T) {
 	}
 }
 
-// TestRecursive ensures find works when recursive is set to false.
+// TestRecursive ensures find works when recursive is set to true.
 func TestRecursive(t *testing.T) {
 	text := "TestFoo"
 	folder := "testdata"
@@ -134,7 +135,7 @@ func TestExtension(t *testing.T) {
 		t.Errorf("\n got: %v\nwant: %v", received, expected)
 	}
 
-	expectedS := "Contents: testdata/test1.txt (2)"
+	expectedS := "Contents: testdata" + string(os.PathSeparator) + "test1.txt (2)"
 	receivedS := results[0]
 
 	if expectedS != receivedS {
@@ -203,7 +204,7 @@ func TestRunFolder(t *testing.T) {
 		t.Fatalf("\n got: %v\nwant: %v", received, expected)
 	}
 
-	expectedS := "Filename: testdata/folder1"
+	expectedS := "Filename: testdata" + string(os.PathSeparator) + "folder1"
 	receivedS := results[0]
 
 	if expectedS != receivedS {
