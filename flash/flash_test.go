@@ -4,58 +4,59 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 
 	"github.com/blue-jay/core/flash"
-	"github.com/blue-jay/core/session"
 	"github.com/blue-jay/core/view"
-
-	"github.com/gorilla/sessions"
 )
+
+// Session is an interface for typical sessions
+type Session struct {
+	flashes []interface{}
+	mutex   sync.RWMutex
+}
+
+// Save mocks saving the session
+func (s *Session) Save(r *http.Request, w http.ResponseWriter) error {
+	return nil
+}
+
+// Flashes retrieves the flashes
+func (s *Session) Flashes(vars ...string) []interface{} {
+	s.mutex.RLock()
+	f := s.flashes
+	// Clear the flashes
+	s.flashes = s.flashes[:0]
+	s.mutex.RUnlock()
+	return f
+}
+
+// AddFlash adds a flash to the list
+func (s *Session) AddFlash(f interface{}) {
+	s.mutex.Lock()
+	s.flashes = append(s.flashes, f)
+	s.mutex.Unlock()
+}
 
 // TestFlashSession ensures flashes can be added to the session.
 func TestFlashSession(t *testing.T) {
-	options := sessions.Options{
-		Path:     "/",
-		Domain:   "",
-		MaxAge:   28800,
-		Secure:   false,
-		HttpOnly: true,
-	}
-
-	s := session.Info{
-		AuthKey:    "PzCh6FNAB7/jhmlUQ0+25sjJ+WgcJeKR2bAOtnh9UnfVN+WJSBvY/YC80Rs+rbMtwfmSP4FUSxKPtpYKzKFqFA==",
-		EncryptKey: "3oTKCcKjDHMUlV+qur2Ve664SPpSuviyGQ/UqnroUD8=",
-		CSRFKey:    "xULAGF5FcWvqHsXaovNFJYfgCt6pedRPROqNvsZjU18=",
-		Name:       "sess",
-		Options:    options,
-	}
-
-	// Simulate a request
-	w := httptest.NewRecorder()
-	r, err := http.NewRequest("GET", "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	text := "Success test."
 
-	// Set up the session cookie store
-	s.SetupConfig()
-
-	// Get the session
-	sess, _ := s.Instance(r)
+	// Get the fake session
+	sess := Session{}
 
 	// Add flashes to the session
 	sess.AddFlash(flash.Info{text, flash.Success})
-	sess.Save(r, w)
 
+	// Get the flashes
 	flashes := sess.Flashes()
 
 	if len(flashes) != 1 {
 		t.Fatal("Expected 1 flash message.")
 	}
 
+	// Convert the flash
 	f, ok := flashes[0].(flash.Info)
 
 	if f.Class != flash.Success {
@@ -71,235 +72,6 @@ func TestFlashSession(t *testing.T) {
 	}
 }
 
-// TestModify ensures flashes are added to the view.
-/*func TestModify(t *testing.T) {
-	viewInfo := &view.Info{
-		BaseURI:   "/",
-		Extension: "tmpl",
-		Folder:    "testdata/view",
-		Caching:   false,
-	}
-
-	templates := view.Template{
-		Root:     "test",
-		Children: []string{},
-	}
-
-	options := sessions.Options{
-		Path:     "/",
-		Domain:   "",
-		MaxAge:   28800,
-		Secure:   false,
-		HttpOnly: true,
-	}
-
-	s := session.Info{
-		AuthKey:    "PzCh6FNAB7/jhmlUQ0+25sjJ+WgcJeKR2bAOtnh9UnfVN+WJSBvY/YC80Rs+rbMtwfmSP4FUSxKPtpYKzKFqFA==",
-		EncryptKey: "3oTKCcKjDHMUlV+qur2Ve664SPpSuviyGQ/UqnroUD8=",
-		CSRFKey:    "xULAGF5FcWvqHsXaovNFJYfgCt6pedRPROqNvsZjU18=",
-		Name:       "sess",
-		Options:    options,
-	}
-
-	// Set up the view
-	viewInfo.SetTemplates(templates.Root, templates.Children)
-
-	// Apply the flash modifier
-	viewInfo.SetModifiers(
-		flash.Modify,
-	)
-
-	// Set up the session cookie store
-	s.SetupConfig()
-
-	// Simulate a request
-	w := httptest.NewRecorder()
-	r, err := http.NewRequest("GET", "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	text := "Success test."
-
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		v := viewInfo.New()
-
-		// Get the session
-		sess, _ := s.Instance(r)
-
-		// Add flashes to the session
-		sess.AddFlash(flash.Info{text, flash.Success})
-		sess.Save(r, w)
-
-		err := v.Render(w, r)
-		if err != nil {
-			t.Fatalf("Should not get error: %v", err)
-		}
-	})
-
-	handler.ServeHTTP(w, r)
-
-	actual := w.Body.String()
-	expected := fmt.Sprintf(`<div class="%v">%v</div>`, flash.Success, text)
-
-	if actual != expected {
-		t.Fatalf("\nactual: %v\nexpected: %v", actual, expected)
-	}
-}
-
-// TestModify ensures flashes are not displayed on the page.
-func TestModifyFail(t *testing.T) {
-	viewInfo := &view.Info{
-		BaseURI:   "/",
-		Extension: "tmpl",
-		Folder:    "testdata/view",
-		Caching:   false,
-	}
-
-	templates := view.Template{
-		Root:     "test_fail",
-		Children: []string{},
-	}
-
-	options := sessions.Options{
-		Path:     "/",
-		Domain:   "",
-		MaxAge:   28800,
-		Secure:   false,
-		HttpOnly: true,
-	}
-
-	s := session.Info{
-		AuthKey:    "PzCh6FNAB7/jhmlUQ0+25sjJ+WgcJeKR2bAOtnh9UnfVN+WJSBvY/YC80Rs+rbMtwfmSP4FUSxKPtpYKzKFqFA==",
-		EncryptKey: "3oTKCcKjDHMUlV+qur2Ve664SPpSuviyGQ/UqnroUD8=",
-		CSRFKey:    "xULAGF5FcWvqHsXaovNFJYfgCt6pedRPROqNvsZjU18=",
-		Name:       "sess",
-		Options:    options,
-	}
-
-	// Set up the view
-	viewInfo.SetTemplates(templates.Root, templates.Children)
-
-	// Apply the flash modifier
-	viewInfo.SetModifiers(
-		flash.Modify,
-	)
-
-	// Set up the session cookie store
-	s.SetupConfig()
-
-	// Simulate a request
-	w := httptest.NewRecorder()
-	r, err := http.NewRequest("GET", "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	text := "Success test."
-
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		v := viewInfo.New()
-
-		// Get the session
-		sess, _ := s.Instance(r)
-
-		// Add flashes to the session
-		sess.AddFlash(flash.Info{text, flash.Success})
-		sess.Save(r, w)
-
-		err := v.Render(w, r)
-		if err != nil {
-			t.Fatalf("Should not get error: %v", err)
-		}
-	})
-
-	handler.ServeHTTP(w, r)
-
-	actual := w.Body.String()
-	expected := "Failure!"
-
-	if actual != expected {
-		t.Fatalf("\nactual: %v\nexpected: %v", actual, expected)
-	}
-}
-
-// TestFlashDefault ensures flashes are added to the view even if a plain text
-// message is added to flashes instead of a flash.Info type
-func TestFlashDefault(t *testing.T) {
-	viewInfo := &view.Info{
-		BaseURI:   "/",
-		Extension: "tmpl",
-		Folder:    "testdata/view",
-		Caching:   false,
-	}
-
-	templates := view.Template{
-		Root:     "test",
-		Children: []string{},
-	}
-
-	options := sessions.Options{
-		Path:     "/",
-		Domain:   "",
-		MaxAge:   28800,
-		Secure:   false,
-		HttpOnly: true,
-	}
-
-	s := session.Info{
-		AuthKey:    "PzCh6FNAB7/jhmlUQ0+25sjJ+WgcJeKR2bAOtnh9UnfVN+WJSBvY/YC80Rs+rbMtwfmSP4FUSxKPtpYKzKFqFA==",
-		EncryptKey: "3oTKCcKjDHMUlV+qur2Ve664SPpSuviyGQ/UqnroUD8=",
-		CSRFKey:    "xULAGF5FcWvqHsXaovNFJYfgCt6pedRPROqNvsZjU18=",
-		Name:       "sess",
-		Options:    options,
-	}
-
-	// Set up the view
-	viewInfo.SetTemplates(templates.Root, templates.Children)
-
-	// Apply the flash modifier
-	viewInfo.SetModifiers(
-		flash.Modify,
-	)
-
-	// Set up the session cookie store
-	s.SetupConfig()
-
-	// Simulate a request
-	w := httptest.NewRecorder()
-	r, err := http.NewRequest("GET", "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	text := "Just a string."
-
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		v := viewInfo.New()
-
-		// Get the session
-		sess, _ := s.Instance(r)
-
-		// Add flashes to the session
-		sess.AddFlash(text)
-		sess.Save(r, w)
-
-		err := v.Render(w, r)
-		if err != nil {
-			t.Fatalf("Should not get error: %v", err)
-		}
-	})
-
-	handler.ServeHTTP(w, r)
-
-	actual := w.Body.String()
-	expected := fmt.Sprintf(`<div class="%v">%v</div>`, flash.Standard, text)
-
-	if actual != expected {
-		t.Fatalf("\nactual: %v\nexpected: %v", actual, expected)
-	}
-}*/
-
 // TestSendFlashes are available for AJAX.
 func TestSendFlashes(t *testing.T) {
 	viewInfo := &view.Info{
@@ -314,27 +86,8 @@ func TestSendFlashes(t *testing.T) {
 		Children: []string{},
 	}
 
-	options := sessions.Options{
-		Path:     "/",
-		Domain:   "",
-		MaxAge:   28800,
-		Secure:   false,
-		HttpOnly: true,
-	}
-
-	s := session.Info{
-		AuthKey:    "PzCh6FNAB7/jhmlUQ0+25sjJ+WgcJeKR2bAOtnh9UnfVN+WJSBvY/YC80Rs+rbMtwfmSP4FUSxKPtpYKzKFqFA==",
-		EncryptKey: "3oTKCcKjDHMUlV+qur2Ve664SPpSuviyGQ/UqnroUD8=",
-		CSRFKey:    "xULAGF5FcWvqHsXaovNFJYfgCt6pedRPROqNvsZjU18=",
-		Name:       "sess",
-		Options:    options,
-	}
-
 	// Set up the view
 	viewInfo.SetTemplates(templates.Root, templates.Children)
-
-	// Set up the session cookie store
-	s.SetupConfig()
 
 	// Simulate a request
 	w := httptest.NewRecorder()
@@ -345,17 +98,15 @@ func TestSendFlashes(t *testing.T) {
 
 	text := "Success test."
 
+	// Get the fake session
+	sess := &Session{}
+
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//v := viewInfo.New()
-
-		// Get the session
-		sess, _ := s.Instance(r)
-
 		// Add flashes to the session
 		sess.AddFlash(flash.Info{text, flash.Success})
 		sess.AddFlash(text)
-		sess.Save(r, w)
 
+		// Send the flashes
 		flash.SendFlashes(w, r, sess)
 	})
 
@@ -368,80 +119,3 @@ func TestSendFlashes(t *testing.T) {
 		t.Fatalf("\nactual: %v\nexpected: %v", actual, expected)
 	}
 }
-
-/*
-// TestNonStringFlash ensures flashes do not error when added with a non-standard type.
-func TestNonStringFlash(t *testing.T) {
-	viewInfo := &view.Info{
-		BaseURI:   "/",
-		Extension: "tmpl",
-		Folder:    "testdata/view",
-		Caching:   false,
-	}
-
-	templates := view.Template{
-		Root:     "test",
-		Children: []string{},
-	}
-
-	options := sessions.Options{
-		Path:     "/",
-		Domain:   "",
-		MaxAge:   28800,
-		Secure:   false,
-		HttpOnly: true,
-	}
-
-	s := session.Info{
-		AuthKey:    "PzCh6FNAB7/jhmlUQ0+25sjJ+WgcJeKR2bAOtnh9UnfVN+WJSBvY/YC80Rs+rbMtwfmSP4FUSxKPtpYKzKFqFA==",
-		EncryptKey: "3oTKCcKjDHMUlV+qur2Ve664SPpSuviyGQ/UqnroUD8=",
-		CSRFKey:    "xULAGF5FcWvqHsXaovNFJYfgCt6pedRPROqNvsZjU18=",
-		Name:       "sess",
-		Options:    options,
-	}
-
-	// Set up the view
-	viewInfo.SetTemplates(templates.Root, templates.Children)
-
-	// Apply the flash modifier
-	viewInfo.SetModifiers(
-		flash.Modify,
-	)
-
-	// Set up the session cookie store
-	s.SetupConfig()
-
-	// Simulate a request
-	w := httptest.NewRecorder()
-	r, err := http.NewRequest("GET", "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	text := 123
-
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		v := viewInfo.New()
-
-		// Get the session
-		sess, _ := s.Instance(r)
-
-		// Add flashes to the session
-		sess.AddFlash(text)
-		sess.Save(r, w)
-
-		err := v.Render(w, r)
-		if err != nil {
-			t.Fatalf("Should not get error: %v", err)
-		}
-	})
-
-	handler.ServeHTTP(w, r)
-
-	actual := w.Body.String()
-	expected := fmt.Sprintf(`<div class="%v">%v</div>`, flash.Standard, text)
-
-	if actual != expected {
-		t.Fatalf("\nactual: %v\nexpected: %v", actual, expected)
-	}
-}*/
