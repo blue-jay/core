@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	"github.com/gorilla/sessions"
 )
 
 var (
@@ -29,6 +27,12 @@ type Info struct {
 	Class   string
 }
 
+// Session is an interface for typical sessions
+type Session interface {
+	Save(*http.Request, http.ResponseWriter) error
+	Flashes(vars ...string) []interface{}
+}
+
 func init() {
 	// Magic goes here to allow serializing maps in securecookie
 	// http://golang.org/pkg/encoding/gob/#Register
@@ -37,22 +41,19 @@ func init() {
 }
 
 // SendFlashes allows retrieval of flash messages for using with Ajax.
-func SendFlashes(w http.ResponseWriter, r *http.Request, sess *sessions.Session) {
-	flashes := peekFlashes(w, r, sess)
+func SendFlashes(w http.ResponseWriter, r *http.Request, sess Session) {
+	flashes := PeekFlashes(w, r, sess)
 	sess.Save(r, w)
 
-	js, err := json.Marshal(flashes)
-	if err != nil {
-		http.Error(w, "JSON Error: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
+	// There is no way for marshal to fail since it's a static type
+	js, _ := json.Marshal(flashes)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(js)
 }
 
-// peekFlashes returns the flashes without destroying them.
-func peekFlashes(w http.ResponseWriter, r *http.Request, sess *sessions.Session) []Info {
+// PeekFlashes returns the flashes without destroying them.
+func PeekFlashes(w http.ResponseWriter, r *http.Request, sess Session) []Info {
 	var v []Info
 
 	// Get the flashes for the template

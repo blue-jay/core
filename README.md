@@ -35,7 +35,7 @@ email			100%
 env				91%
 file			100%
 find			89%
-flash			88%
+flash			100%
 form			73%
 generate		88%
 jsonconfig		100%
