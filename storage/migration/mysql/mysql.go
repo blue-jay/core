@@ -3,6 +3,7 @@ package mysql
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -111,6 +112,10 @@ func (c Configuration) New() (*migration.Info, error) {
 
 	// Store the migration table name
 	mi.table = c.Migration.Table
+
+	if len(mi.table) == 0 {
+		return mig, errors.New("MySQL.Migration.Table key is missing in config file.")
+	}
 
 	// Setup logic was here
 	return migration.New(mi, mi.table, c.Migration.Folder)
