@@ -13,7 +13,7 @@ import (
 type Info struct {
 	Username  string    `json:"Username"`
 	Password  string    `json:"Password"`
-	Database  string    `json:"Datbase"`
+	Database  string    `json:"Database"`
 	Charset   string    `json:"Charset"`
 	Collation string    `json:"Collation"`
 	Hostname  string    `json:"Hostname"`
