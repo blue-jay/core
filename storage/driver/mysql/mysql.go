@@ -11,16 +11,22 @@ import (
 
 // Info holds the details for the MySQL connection.
 type Info struct {
-	Username        string
-	Password        string
-	Database        string
-	Charset         string
-	Collation       string
-	Hostname        string
-	Port            int
-	Parameter       string
-	MigrationFolder string
-	Extension       string
+	Username  string
+	Password  string
+	Database  string
+	Charset   string
+	Collation string
+	Hostname  string
+	Port      int
+	Parameter string
+	Migration
+}
+
+// Migration holds the MySQL migration information.
+type Migration struct {
+	Table     string
+	Folder    string
+	Extension string
 }
 
 // *****************************************************************************

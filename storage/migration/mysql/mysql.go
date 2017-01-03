@@ -7,12 +7,10 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"sync"
 	"time"
 
-	"github.com/blue-jay/core/file"
 	"github.com/blue-jay/core/storage"
-	database "github.com/blue-jay/core/storage/driver/mysql"
+	driver "github.com/blue-jay/core/storage/driver/mysql"
 	"github.com/blue-jay/core/storage/migration"
 	"github.com/jmoiron/sqlx"
 )
@@ -20,7 +18,7 @@ import (
 // *****************************************************************************
 // Thread-Safe Configuration
 // *****************************************************************************
-
+/*
 var (
 	info      database.Info
 	infoMutex sync.RWMutex
@@ -45,27 +43,24 @@ func Config() database.Info {
 	infoMutex.RLock()
 	defer infoMutex.RUnlock()
 	return info
-}
+}*/
 
 // Configuration defines the shared configuration interface.
 type Configuration struct {
-	database.Info
+	driver.Info
 }
 
+/*
 // Shared returns the global configuration information.
 func Shared() Configuration {
 	return Configuration{
 		Config(),
 	}
-}
+}*/
 
 // *****************************************************************************
 // Migration Creation
 // *****************************************************************************
-
-var (
-	migrationTable = "migration"
-)
 
 // New creates a migration connection to the database.
 func (c Configuration) New() (*migration.Info, error) {
@@ -74,22 +69,11 @@ func (c Configuration) New() (*migration.Info, error) {
 	// Load the config
 	i := c.Info
 
-	// Build the path to the mysql migration folder
-	projectRoot := filepath.Dir(os.Getenv("JAYCONFIG"))
-	folder := filepath.Join(projectRoot, i.MigrationFolder)
-
-	// If the folder doesn't exist
-	if !file.Exists(folder) {
-		// Set to the current folder
-		dir, _ := os.Getwd()
-		folder = filepath.Join(dir, i.MigrationFolder)
-	}
+	// Update the config
+	i.Parameter = "parseTime=true&multiStatements=true"
 
 	// Create MySQL entity
 	mi := &Entity{}
-
-	// Update the config
-	mi.UpdateConfig(&i)
 
 	// Connect to the database
 	con, err := i.Connect(true)
@@ -125,27 +109,38 @@ func (c Configuration) New() (*migration.Info, error) {
 	// Store the connection in the entity
 	mi.sql = con
 
+	// Store the migration table name
+	mi.Table = c.Migration.Table
+
 	// Setup logic was here
-	return migration.New(mi, folder)
+	return migration.New(mi, c.Migration.Folder)
 }
 
 // *****************************************************************************
 // Interface
 // *****************************************************************************
 
+// Item defines the migration table.
+type Item struct {
+	ID        uint32    `db:"id"`
+	Name      string    `db:"name"`
+	CreatedAt time.Time `db:"created_at"`
+}
+
+// Entity defines fulfills the migration interface.
+type Entity struct {
+	Table string
+	sql   *sqlx.DB
+}
+
 // Extension returns the file extension with a period
 func (t *Entity) Extension() string {
 	return ".sql"
 }
 
-// UpdateConfig will update any parameters necessary
-func (t *Entity) UpdateConfig(config *database.Info) {
-	config.Parameter = "parseTime=true&multiStatements=true"
-}
-
 // TableExist returns true if the migration table exists
 func (t *Entity) TableExist() error {
-	_, err := t.sql.Exec(fmt.Sprintf("SELECT 1 FROM %v LIMIT 1;", migrationTable))
+	_, err := t.sql.Exec(fmt.Sprintf("SELECT 1 FROM %v LIMIT 1;", t.Table))
 	if err != nil {
 		return err
 	}
@@ -161,7 +156,7 @@ func (t *Entity) CreateTable() error {
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		UNIQUE KEY (name),
   		PRIMARY KEY (id)
-		);`, migrationTable))
+		);`, t.Table))
 
 	if err != nil {
 		return err
@@ -172,8 +167,8 @@ func (t *Entity) CreateTable() error {
 
 // Status returns last migration name
 func (t *Entity) Status() (string, error) {
-	result := &Entity{}
-	err := t.sql.Get(result, fmt.Sprintf("SELECT * FROM %v ORDER BY id DESC LIMIT 1;", migrationTable))
+	result := &Item{}
+	err := t.sql.Get(result, fmt.Sprintf("SELECT * FROM %v ORDER BY id DESC LIMIT 1;", t.Table))
 
 	// If no rows, then set to nil
 	if err == sql.ErrNoRows {
@@ -185,8 +180,8 @@ func (t *Entity) Status() (string, error) {
 
 // statusID returns last migration ID
 func (t *Entity) statusID() (uint32, error) {
-	result := &Entity{}
-	err := t.sql.Get(result, fmt.Sprintf("SELECT * FROM %v ORDER BY id DESC LIMIT 1;", migrationTable))
+	result := &Item{}
+	err := t.sql.Get(result, fmt.Sprintf("SELECT * FROM %v ORDER BY id DESC LIMIT 1;", t.Table))
 	return result.ID, err
 }
 
@@ -198,13 +193,13 @@ func (t *Entity) Migrate(qry string) error {
 
 // RecordUp adds a record to the database
 func (t *Entity) RecordUp(name string) error {
-	_, err := t.sql.Exec(fmt.Sprintf("INSERT INTO %v (name) VALUES (?);", migrationTable), name)
+	_, err := t.sql.Exec(fmt.Sprintf("INSERT INTO %v (name) VALUES (?);", t.Table), name)
 	return err
 }
 
 // RecordDown removes a record from the database and updates the AUTO_INCREMENT value
 func (t *Entity) RecordDown(name string) error {
-	_, err := t.sql.Exec(fmt.Sprintf("DELETE FROM %v WHERE name = ? LIMIT 1;", migrationTable), name)
+	_, err := t.sql.Exec(fmt.Sprintf("DELETE FROM %v WHERE name = ? LIMIT 1;", t.Table), name)
 
 	// If the record was removed successfully
 	if err == nil {
@@ -223,17 +218,9 @@ func (t *Entity) RecordDown(name string) error {
 			nextID = ID
 		}
 
-		_, err = t.sql.Exec(fmt.Sprintf("ALTER TABLE %v AUTO_INCREMENT = %v;", migrationTable, nextID))
+		_, err = t.sql.Exec(fmt.Sprintf("ALTER TABLE %v AUTO_INCREMENT = %v;", t.Table, nextID))
 	}
 	return err
-}
-
-// Entity defines the migration table
-type Entity struct {
-	ID        uint32    `db:"id"`
-	Name      string    `db:"name"`
-	CreatedAt time.Time `db:"created_at"`
-	sql       *sqlx.DB
 }
 
 // *****************************************************************************
