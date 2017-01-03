@@ -66,7 +66,7 @@ func loadConfig() mysql.Configuration {
 		log.Fatalf("%v", err)
 	}
 	info.MySQL.Database = "database_test"
-	info.MySQL.MigrationFolder = migrationFolder
+	info.MySQL.Migration.Folder = migrationFolder
 
 	// Connect to the database
 	return mysql.Configuration{

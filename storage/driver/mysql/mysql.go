@@ -11,15 +11,15 @@ import (
 
 // Info holds the details for the MySQL connection.
 type Info struct {
-	Username  string
-	Password  string
-	Database  string
-	Charset   string
-	Collation string
-	Hostname  string
-	Port      int
-	Parameter string
-	Migration
+	Username  string    `json:"Username"`
+	Password  string    `json:"Password"`
+	Database  string    `json:"Datbase"`
+	Charset   string    `json:"Charset"`
+	Collation string    `json:"Collation"`
+	Hostname  string    `json:"Hostname"`
+	Port      int       `json:"Port"`
+	Parameter string    `json:"Parameter"`
+	Migration Migration `json:"Migration"`
 }
 
 // Migration holds the MySQL migration information.

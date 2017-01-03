@@ -110,10 +110,10 @@ func (c Configuration) New() (*migration.Info, error) {
 	mi.sql = con
 
 	// Store the migration table name
-	mi.Table = c.Migration.Table
+	mi.table = c.Migration.Table
 
 	// Setup logic was here
-	return migration.New(mi, c.Migration.Folder)
+	return migration.New(mi, mi.table, c.Migration.Folder)
 }
 
 // *****************************************************************************
@@ -129,7 +129,7 @@ type Item struct {
 
 // Entity defines fulfills the migration interface.
 type Entity struct {
-	Table string
+	table string
 	sql   *sqlx.DB
 }
 
@@ -140,7 +140,7 @@ func (t *Entity) Extension() string {
 
 // TableExist returns true if the migration table exists
 func (t *Entity) TableExist() error {
-	_, err := t.sql.Exec(fmt.Sprintf("SELECT 1 FROM %v LIMIT 1;", t.Table))
+	_, err := t.sql.Exec(fmt.Sprintf("SELECT 1 FROM %v LIMIT 1;", t.table))
 	if err != nil {
 		return err
 	}
@@ -156,7 +156,7 @@ func (t *Entity) CreateTable() error {
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		UNIQUE KEY (name),
   		PRIMARY KEY (id)
-		);`, t.Table))
+		);`, t.table))
 
 	if err != nil {
 		return err
@@ -168,7 +168,7 @@ func (t *Entity) CreateTable() error {
 // Status returns last migration name
 func (t *Entity) Status() (string, error) {
 	result := &Item{}
-	err := t.sql.Get(result, fmt.Sprintf("SELECT * FROM %v ORDER BY id DESC LIMIT 1;", t.Table))
+	err := t.sql.Get(result, fmt.Sprintf("SELECT * FROM %v ORDER BY id DESC LIMIT 1;", t.table))
 
 	// If no rows, then set to nil
 	if err == sql.ErrNoRows {
@@ -181,7 +181,7 @@ func (t *Entity) Status() (string, error) {
 // statusID returns last migration ID
 func (t *Entity) statusID() (uint32, error) {
 	result := &Item{}
-	err := t.sql.Get(result, fmt.Sprintf("SELECT * FROM %v ORDER BY id DESC LIMIT 1;", t.Table))
+	err := t.sql.Get(result, fmt.Sprintf("SELECT * FROM %v ORDER BY id DESC LIMIT 1;", t.table))
 	return result.ID, err
 }
 
@@ -193,13 +193,13 @@ func (t *Entity) Migrate(qry string) error {
 
 // RecordUp adds a record to the database
 func (t *Entity) RecordUp(name string) error {
-	_, err := t.sql.Exec(fmt.Sprintf("INSERT INTO %v (name) VALUES (?);", t.Table), name)
+	_, err := t.sql.Exec(fmt.Sprintf("INSERT INTO %v (name) VALUES (?);", t.table), name)
 	return err
 }
 
 // RecordDown removes a record from the database and updates the AUTO_INCREMENT value
 func (t *Entity) RecordDown(name string) error {
-	_, err := t.sql.Exec(fmt.Sprintf("DELETE FROM %v WHERE name = ? LIMIT 1;", t.Table), name)
+	_, err := t.sql.Exec(fmt.Sprintf("DELETE FROM %v WHERE name = ? LIMIT 1;", t.table), name)
 
 	// If the record was removed successfully
 	if err == nil {
@@ -218,7 +218,7 @@ func (t *Entity) RecordDown(name string) error {
 			nextID = ID
 		}
 
-		_, err = t.sql.Exec(fmt.Sprintf("ALTER TABLE %v AUTO_INCREMENT = %v;", t.Table, nextID))
+		_, err = t.sql.Exec(fmt.Sprintf("ALTER TABLE %v AUTO_INCREMENT = %v;", t.table, nextID))
 	}
 	return err
 }
