@@ -51,6 +51,8 @@ type Info struct {
 	List []string
 	// Position is the index of the current migration in the List
 	position int
+	// Folder is the migrations table
+	Table string
 	// TemplateUp is the stub used for Up migration files when they are created
 	TemplateUp string
 	// TemplateDown is the stub used for Down migration files when they are created
@@ -107,10 +109,11 @@ func (info *Info) Output() string {
 // table (if one doesn't exist), retrieving a list of the available
 // migrations, and reading the last migration.
 // You must connect to the database prior to calling this function.
-func New(db Interface, folder string) (*Info, error) {
+func New(db Interface, table string, folder string) (*Info, error) {
 	info := &Info{
 		Db:         db,
 		Folder:     folder,
+		Table:      table,
 		DateFormat: "20060102_150405.000000",
 	}
 
