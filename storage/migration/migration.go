@@ -51,6 +51,8 @@ type Info struct {
 	List []string
 	// Position is the index of the current migration in the List
 	position int
+	// positionName is the name of the current migration
+	positionName string
 	// Folder is the migrations table
 	Table string
 	// TemplateUp is the stub used for Up migration files when they are created
@@ -69,8 +71,10 @@ func (info *Info) Position() int {
 	// If migration is found
 	if len(migrationName) > 0 && err == nil {
 		info.position, _ = info.migrationPosition(migrationName)
+		info.positionName = migrationName
 	} else { // Else reset the position to 0
 		info.position = 0
+		info.positionName = ""
 	}
 
 	return info.position
@@ -135,6 +139,16 @@ func New(db Interface, table string, folder string) (*Info, error) {
 	return info, err
 }
 
+func (info *Info) verifyMigration(path string) bool {
+	// Get the path name
+	name := filepath.Base(path)
+	name = strings.TrimSuffix(name, ".up"+info.Db.Extension())
+	name = strings.TrimSuffix(name, ".down"+info.Db.Extension())
+
+	// Determine if the migration matches
+	return name == info.positionName
+}
+
 // Status returns the last applied migration name without the file extension.
 func (info *Info) Status() string {
 	// If migration is current
@@ -142,11 +156,16 @@ func (info *Info) Status() string {
 		return ErrNone.Error()
 	}
 
-	// Get the name of the last applied migration
-	file := info.List[info.Position()-1]
+	// Get the name of the last applied migration (relative file path)
+	path := info.List[info.Position()-1]
+
+	// Determine if the migration is missing on disk
+	if strings.HasPrefix(filepath.Base(path), info.positionName) {
+		return fmt.Sprintf("Migration is missing on disk: %v", info.positionName)
+	}
 
 	// Get the name to store in the database record
-	return strings.Replace(filepath.Base(file), ".up"+info.Db.Extension(), "", -1)
+	return strings.Replace(filepath.Base(path), ".up"+info.Db.Extension(), "", -1)
 }
 
 // updateList returns the list of Up migrations.
@@ -315,6 +334,11 @@ func (info *Info) down() error {
 
 	// Change the extension to reference the down file
 	file := strings.Replace(fileUp, ".up"+info.Db.Extension(), ".down"+info.Db.Extension(), -1)
+
+	// Verify the migration
+	if !info.verifyMigration(file) {
+		return errors.New("Migration is missing: " + file)
+	}
 
 	// Read the file
 	data, err := ioutil.ReadFile(file)
