@@ -92,6 +92,34 @@ func TestFormRadioNil(t *testing.T) {
 	}
 }
 
+// TestFormRadioNilNil ensures input parses correctly with a nil in the default
+// array and value.
+func TestFormRadioNilNil(t *testing.T) {
+	fm := form.Map()
+
+	temp, err := template.New("test").Funcs(fm).Parse(`<input {{RADIO "name" nil nil .}}>`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	buf := new(bytes.Buffer)
+
+	data := make(map[string]interface{}, 0)
+	data["Name"] = "foo"
+
+	err = temp.Execute(buf, data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := `<input type="radio" name="name" value="">`
+	received := buf.String()
+
+	if !strings.HasPrefix(received, expected) {
+		t.Errorf("\n got: %v\nwant: %v", received, expected)
+	}
+}
+
 // TestFormRadioNil ensures input parses correctly with an empty string in the
 // default array.
 func TestFormRadioEmpty(t *testing.T) {
