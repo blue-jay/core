@@ -92,6 +92,34 @@ func TestFormCheckboxNil(t *testing.T) {
 	}
 }
 
+// TestFormCheckboxNilNil ensures input parses correctly with a nil in the default
+// array and value.
+func TestFormCheckboxNilNil(t *testing.T) {
+	fm := form.Map()
+
+	temp, err := template.New("test").Funcs(fm).Parse(`<input {{CHECKBOX "name" nil nil .}}>`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	buf := new(bytes.Buffer)
+
+	data := make(map[string]interface{}, 0)
+	data["Name"] = "foo"
+
+	err = temp.Execute(buf, data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := `<input type="checkbox" name="name" value="">`
+	received := buf.String()
+
+	if !strings.HasPrefix(received, expected) {
+		t.Errorf("\n got: %v\nwant: %v", received, expected)
+	}
+}
+
 // TestFormCheckboxNil ensures input parses correctly with an empty string in the
 // default array.
 func TestFormCheckboxEmpty(t *testing.T) {
