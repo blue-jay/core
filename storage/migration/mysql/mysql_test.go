@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/blue-jay/core/storage"
@@ -18,35 +16,17 @@ import (
 )
 
 var (
-	migrationFolder = filepath.Join("migration_files")
+	migrationFolder = "testdata/migration_files"
 	conf            mysql.Configuration
 	con             Connection
 )
 
 // TestMain runs setup, tests, and then teardown.
 func TestMain(m *testing.M) {
-	// Get the environment variable
-	if len(os.Getenv("JAYCONFIG")) == 0 {
+	// For use with coveralls
+	file := "envtest.json"
 
-		// For use with coveralls
-		file := "envtest.json"
-
-		// For use with docker on Windows
-		if runtime.GOOS == "windows" {
-			file = "envdocker.json"
-		}
-
-		p, err := filepath.Abs("testdata/" + file)
-		if err != nil {
-			log.Fatalf("%v", err)
-		}
-
-		// Set the environment variable
-		os.Setenv("JAYCONFIG", p)
-	}
-
-	// Load the config
-	conf = loadConfig()
+	_, conf = mysql.SetUp("testdata/"+file, "database_test")
 
 	// Connect to the database
 	db, _ := conf.Connect(true)

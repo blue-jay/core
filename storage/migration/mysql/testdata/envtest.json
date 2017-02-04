@@ -9,7 +9,7 @@
 		"Port":3306,
 		"Parameter":"parseTime=true",
 		"Migration":{
-			"Folder":"migration/mysql",
+			"Folder":"migration_files",
 			"Table":"migration",
 			"Extension":"sql"
 		}
