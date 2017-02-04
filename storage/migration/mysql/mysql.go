@@ -246,12 +246,20 @@ func SetUp(envPath string, dbName string) (*migration.Info, Configuration) {
 		os.Setenv("JAYCONFIG", p)
 	}
 
+	// Get the config file path
+	configFile := os.Getenv("JAYCONFIG")
+
 	// Load the config
-	config, err := storage.LoadConfig(os.Getenv("JAYCONFIG"))
+	config, err := storage.LoadConfig(configFile)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
+
+	// Set the database name
 	config.MySQL.Database = dbName
+
+	// Set the migration folder to the absolute path
+	config.MySQL.Migration.Folder = filepath.Join(filepath.Dir(configFile), config.MySQL.Migration.Folder)
 
 	// Create the migration configuration
 	conf := Configuration{
