@@ -272,9 +272,16 @@ func SetUp(envPath string, dbName string) (*migration.Info, Configuration) {
 		log.Fatalf("%v", err)
 	}
 
-	// Refresh the data
-	mig.DownAll()
-	mig.UpAll()
+	// Refresh the data with verbose logging
+	err = mig.DownAll()
+	if err != nil {
+		log.Println(err)
+	}
+
+	err = mig.UpAll()
+	if err != nil {
+		log.Println(err)
+	}
 
 	return mig, conf
 }
