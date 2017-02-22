@@ -229,7 +229,7 @@ func TestIMG(t *testing.T) {
 	}
 }
 
-// TestJS ensures IMG from internet parses correctly.
+// TestIMG ensures IMG from internet parses correctly.
 func TestIMGInternet(t *testing.T) {
 	config := asset.Info{
 		Folder: "testdata",
@@ -257,7 +257,7 @@ func TestIMGInternet(t *testing.T) {
 	}
 }
 
-// TestJSMissing ensures file is missing error is thrown.
+// TestIMGMissing ensures file is missing error is thrown.
 func TestIMGMissing(t *testing.T) {
 	config := asset.Info{
 		Folder: "testdata2",
