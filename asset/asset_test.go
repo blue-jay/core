@@ -201,6 +201,90 @@ func TestJSMissing(t *testing.T) {
 	}
 }
 
+// TestIMG ensures IMG parses correctly.
+func TestIMG(t *testing.T) {
+	config := asset.Info{
+		Folder: "testdata",
+	}
+
+	fm := config.Map("/")
+
+	temp, err := template.New("test").Funcs(fm).Parse(`{{IMG "test.gif" "Loader"}}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	buf := new(bytes.Buffer)
+
+	err = temp.Execute(buf, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := `<img src="/test.gif?`
+	received := buf.String()
+
+	if !strings.HasPrefix(received, expected) {
+		t.Errorf("\n got: %v\nwant: %v", received, expected)
+	}
+}
+
+// TestIMG ensures IMG from internet parses correctly.
+func TestIMGInternet(t *testing.T) {
+	config := asset.Info{
+		Folder: "testdata",
+	}
+
+	fm := config.Map("/")
+
+	temp, err := template.New("test").Funcs(fm).Parse(`{{IMG "//test.gif" "Loader"}}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	buf := new(bytes.Buffer)
+
+	err = temp.Execute(buf, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := `<img src="//test.gif" alt="Loader" />`
+	received := buf.String()
+
+	if expected != received {
+		t.Errorf("\n got: %v\nwant: %v", received, expected)
+	}
+}
+
+// TestIMGMissing ensures file is missing error is thrown.
+func TestIMGMissing(t *testing.T) {
+	config := asset.Info{
+		Folder: "testdata2",
+	}
+
+	fm := config.Map("/")
+
+	temp, err := template.New("test").Funcs(fm).Parse(`{{IMG "test2.gif" "Loader"}}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	buf := new(bytes.Buffer)
+
+	err = temp.Execute(buf, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := `<!-- IMG Error: test2.gif -->`
+	received := buf.String()
+
+	if expected != received {
+		t.Errorf("\n got: %v\nwant: %v", received, expected)
+	}
+}
+
 // TTestBaseURI ensure URI is handled correctly.
 func TestBaseURI(t *testing.T) {
 	config := asset.Info{
