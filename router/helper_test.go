@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/blue-jay/core/router"
+	routerlib "github.com/blue-jay/core/router"
 )
 
 // middlewareTest1 will modify a form variable.
@@ -27,9 +27,6 @@ func middlewareTest2(h http.Handler) http.Handler {
 
 // TestChain ensures middleware can be chained together.
 func TestChain(t *testing.T) {
-	// Reset the router
-	router.ResetConfig()
-
 	// Mock the HTTP handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		val := url.Values{}
@@ -46,11 +43,12 @@ func TestChain(t *testing.T) {
 	}
 
 	// Add two middlware to the chain
+	router := routerlib.New()
 	c := router.Chain(middlewareTest1, middlewareTest2)
 	router.Get("/", handler, c...)
 
 	// Mock the request
-	router.Instance().ServeHTTP(w, r)
+	router.Router().ServeHTTP(w, r)
 
 	actual := r.Form.Get("foo1")
 	expected := "mt1"
@@ -69,9 +67,6 @@ func TestChain(t *testing.T) {
 
 // TestChainHandler ensures the handler can be chained.
 func TestChainHandler(t *testing.T) {
-	// Reset the router
-	router.ResetConfig()
-
 	// Mock the HTTP handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		val := url.Values{}
@@ -88,6 +83,7 @@ func TestChainHandler(t *testing.T) {
 	}
 
 	// Add two middlware to the chain with a handler
+	router := routerlib.New()
 	c := router.ChainHandler(handler, middlewareTest1, middlewareTest2)
 
 	// Mock the request
@@ -110,13 +106,11 @@ func TestChainHandler(t *testing.T) {
 
 // TestRouteList ensure the correct routes are returned.
 func TestRouteList(t *testing.T) {
-	// Reset the router
-	router.ResetConfig()
-
 	// Mock the HTTP handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
 	// Test all the handlers
+	router := routerlib.New()
 	router.Get("/get", handler)
 	router.Post("/post", handler)
 	router.Delete("/delete", handler)
@@ -148,13 +142,11 @@ func TestRouteList(t *testing.T) {
 
 // TestRouteList ensure the correct routes are NOT returned.
 func TestRouteListFail(t *testing.T) {
-	// Reset the router
-	router.ResetConfig()
-
 	// Mock the HTTP handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
 	// Test all the handlers
+	router := routerlib.New()
 	router.Get("/get", handler)
 	router.Post("/post", handler)
 	router.Delete("/delete", handler)

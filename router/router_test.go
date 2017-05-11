@@ -5,16 +5,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/blue-jay/core/router"
+	routerlib "github.com/blue-jay/core/router"
 
 	"github.com/husobee/vestigo"
 )
 
 // TestNotFound ensures a 404 is returned when a route is not found.
 func TestNotFound(t *testing.T) {
-	// Reset the router
-	router.ResetConfig()
-
 	status404 := false
 
 	// Mock the HTTP handler
@@ -30,10 +27,11 @@ func TestNotFound(t *testing.T) {
 	}
 
 	// Set the 404 handler
-	router.NotFound(handler)
+	router := routerlib.New()
+	router.SetNotFound(handler)
 
 	// Mock the request
-	router.Instance().ServeHTTP(w, r)
+	router.Router().ServeHTTP(w, r)
 
 	actual := status404
 	expected := true
@@ -45,8 +43,6 @@ func TestNotFound(t *testing.T) {
 
 // TestMethodNotAllowed ensures a 405 is returned when a route is not allowed.
 func TestNotAllowed(t *testing.T) {
-	// Reset the router
-	router.ResetConfig()
 
 	status405 := false
 
@@ -69,13 +65,14 @@ func TestNotAllowed(t *testing.T) {
 	}
 
 	// Set a GET request
+	router := routerlib.New()
 	router.Get("/foo", quickHandler)
 
 	// Set the 405 handler
-	router.MethodNotAllowed(handler)
+	router.SetMethodNotAllowed(handler)
 
 	// Mock the request
-	router.Instance().ServeHTTP(w, r)
+	router.Router().ServeHTTP(w, r)
 
 	actual := status405
 	expected := true
@@ -87,12 +84,10 @@ func TestNotAllowed(t *testing.T) {
 
 // TestParam ensures param is returned properly.
 func TestParam(t *testing.T) {
-	// Reset the router
-	router.ResetConfig()
-
 	param := ""
 
 	// Mock the HTTP handler
+	router := routerlib.New()
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		param = router.Param(r, "foo")
 	})
@@ -108,7 +103,7 @@ func TestParam(t *testing.T) {
 	router.Get("/:foo", handler)
 
 	// Mock the request
-	router.Instance().ServeHTTP(w, r)
+	router.Router().ServeHTTP(w, r)
 
 	actual := param
 	expected := "bar"
@@ -120,12 +115,10 @@ func TestParam(t *testing.T) {
 
 // TestParamFail ensures param is NOT returned properly.
 func TestParamFail(t *testing.T) {
-	// Reset the router
-	router.ResetConfig()
-
 	param := ""
 
 	// Mock the HTTP handler
+	router := routerlib.New()
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		param = router.Param(r, "foo2")
 	})
@@ -141,7 +134,7 @@ func TestParamFail(t *testing.T) {
 	router.Get("/:foo", handler)
 
 	// Mock the request
-	router.Instance().ServeHTTP(w, r)
+	router.Router().ServeHTTP(w, r)
 
 	actual := param
 	expected := "bar"

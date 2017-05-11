@@ -9,50 +9,36 @@ import (
 	"github.com/husobee/vestigo"
 )
 
-// *****************************************************************************
-// Thread-Safe Configuration
-// *****************************************************************************
-
-var (
+// Item implements the password hashing system.
+type Item struct {
 	r         *vestigo.Router
-	infoMutex sync.RWMutex
-)
-
-// init sets up the router.
-func init() {
-	ResetConfig()
+	routeList []string
+	listMutex sync.RWMutex
 }
 
-// ResetConfig creates a new instance.
-func ResetConfig() {
-	infoMutex.Lock()
-	routeList = []string{}
-	r = vestigo.NewRouter()
-	infoMutex.Unlock()
+// New returns a new instance of the router.
+func New() *Item {
+	s := new(Item)
+	s.r = vestigo.NewRouter()
+	return s
 }
 
-// Instance returns the router.
-func Instance() *vestigo.Router {
-	infoMutex.RLock()
-	defer infoMutex.RUnlock()
-	return r
+// Router returns the router.
+func (s *Item) Router() *vestigo.Router {
+	return s.r
 }
 
-// NotFound sets the 404 handler.
-func NotFound(fn http.HandlerFunc) {
-	infoMutex.Lock()
+// SetNotFound sets the 404 handler.
+func (s *Item) SetNotFound(fn http.HandlerFunc) {
 	vestigo.CustomNotFoundHandlerFunc(fn)
-	infoMutex.Unlock()
 }
 
-// MethodNotAllowed sets the 405 handler.
-func MethodNotAllowed(fn vestigo.MethodNotAllowedHandlerFunc) {
-	infoMutex.Lock()
+// SetMethodNotAllowed sets the 405 handler.
+func (s *Item) SetMethodNotAllowed(fn vestigo.MethodNotAllowedHandlerFunc) {
 	vestigo.CustomMethodNotAllowedHandlerFunc(fn)
-	infoMutex.Unlock()
 }
 
 // Param returns the URL parameter.
-func Param(r *http.Request, name string) string {
+func (s *Item) Param(r *http.Request, name string) string {
 	return vestigo.Param(r, name)
 }
