@@ -44,7 +44,7 @@ func TestChain(t *testing.T) {
 
 	// Add two middlware to the chain
 	router := routerlib.New()
-	c := router.Chain(middlewareTest1, middlewareTest2)
+	c := routerlib.Chain(middlewareTest1, middlewareTest2)
 	router.Get("/", handler, c...)
 
 	// Mock the request
@@ -83,8 +83,7 @@ func TestChainHandler(t *testing.T) {
 	}
 
 	// Add two middlware to the chain with a handler
-	router := routerlib.New()
-	c := router.ChainHandler(handler, middlewareTest1, middlewareTest2)
+	c := routerlib.ChainHandler(handler, middlewareTest1, middlewareTest2)
 
 	// Mock the request
 	c.ServeHTTP(w, r)

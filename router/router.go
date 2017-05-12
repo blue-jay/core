@@ -24,7 +24,7 @@ func New() *Item {
 }
 
 // Router returns the router.
-func (s *Item) Router() *vestigo.Router {
+func (s *Item) Router() http.Handler {
 	return s.r
 }
 

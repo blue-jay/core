@@ -45,8 +45,11 @@ type Info struct {
 
 // New accepts multiple templates and then returns a new view.
 func (v *Info) New(templateList ...string) *Info {
+	// Clear the existing variables and templates.
 	v.Vars = make(map[string]interface{})
-	v.templates = append(v.templates, templateList...)
+	v.templates = append([]string{}, templateList...)
+
+	// Set the base template.
 	v.base = v.rootTemplate
 
 	return v
