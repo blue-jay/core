@@ -279,10 +279,10 @@ func TestMissingChildTemplate(t *testing.T) {
 
 	// Render the view
 	v := viewInfo.New("foo/index")
-	v.Render(w, r)
+	err = v.Render(w, r)
 
 	received := w.Body.String()
-	expected := `foobar.tmpl: no such file or directory`
+	expected := `Template Parse Error`
 
 	if !strings.Contains(received, expected) {
 		t.Fatalf("\nactual: %v\nexpected: %v", received, expected)
@@ -316,10 +316,10 @@ func TestMissingBaseTemplate(t *testing.T) {
 
 	// Render the view
 	v := viewInfo.New("foo/index")
-	v.Render(w, r)
+	err = v.Render(w, r)
 
 	received := w.Body.String()
-	expected := `basetest-missing.tmpl: no such file or directory`
+	expected := `Template Parse Error`
 
 	if !strings.Contains(received, expected) {
 		t.Fatalf("\nactual: %v\nexpected: %v", received, expected)
