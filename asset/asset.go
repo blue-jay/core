@@ -49,15 +49,15 @@ func (c Info) Map(baseURI string) template.FuncMap {
 	}
 
 	f["IMG"] = func(fpath string, alt string) template.HTML {
-                path, err := c.assetTimePath(baseURI, fpath)
+		path, err := c.assetTimePath(baseURI, fpath)
 
-                if err != nil {
-                        log.Println("IMG Error:", err)
-                        return template.HTML("<!-- IMG Error: " + fpath + " -->")
-                }
+		if err != nil {
+			log.Println("IMG Error:", err)
+			return template.HTML("<!-- IMG Error: " + fpath + " -->")
+		}
 
-                return template.HTML(fmt.Sprintf(`<img src="%v" alt="%v" />`, path, alt))
-        }
+		return template.HTML(fmt.Sprintf(`<img src="%v" alt="%v" />`, path, alt))
+	}
 
 	return f
 }
