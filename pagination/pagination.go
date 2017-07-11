@@ -37,10 +37,10 @@ func New(r *http.Request, perPage int) *Info {
 }
 
 // CalculatePages calculates the number of pages by passing in the item total.
-func (info *Info) CalculatePages(itemTotal int) {
-	info.TotalPages = itemTotal / info.PerPage
-	if itemTotal%info.PerPage != 0 {
-		info.TotalPages++
+func (i *Info) CalculatePages(itemTotal int) {
+	i.TotalPages = itemTotal / i.PerPage
+	if itemTotal%i.PerPage != 0 {
+		i.TotalPages++
 	}
 }
 

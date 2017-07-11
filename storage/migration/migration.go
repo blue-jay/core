@@ -173,7 +173,7 @@ func (info *Info) updateList() ([]string, error) {
 	return filepath.Glob(filepath.Join(info.Folder, "*.up"+info.Db.Extension()))
 }
 
-// migrtionPosition returns the position of the migration or an error.
+// migrationPosition returns the position of the migration or an error.
 func (info *Info) migrationPosition(current string) (int, error) {
 	for i := 0; i < len(info.List); i++ {
 		if strings.Contains(info.List[i], current) {

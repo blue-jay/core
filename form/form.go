@@ -63,6 +63,7 @@ func (c Info) UploadFile(r *http.Request, name string, maxSize int64) (string, s
 	}
 
 	f, err := os.OpenFile(filepath.Join(c.FileStorageFolder, fileID), os.O_WRONLY|os.O_CREATE, 0644)
+	defer f.Close()
 	if err != nil {
 		return "", "", err
 	}
@@ -77,7 +78,6 @@ func (c Info) UploadFile(r *http.Request, name string, maxSize int64) (string, s
 	}
 
 	_, err = io.Copy(f, file)
-	defer f.Close()
 	if err != nil {
 		return "", "", err
 	}

@@ -27,13 +27,12 @@ func UpdateFileKeys(src string) error {
 			newFile += "\n"
 		}
 
-		if strings.Contains(scanner.Text(), `"AuthKey"`) {
+		switch {
+		case strings.Contains(scanner.Text(), `"AuthKey"`):
 			newFile += fmt.Sprintf(`    "AuthKey":"%v",`, EncodedKey(64))
-		} else if strings.Contains(scanner.Text(), `"EncryptKey"`) {
-			newFile += fmt.Sprintf(`    "EncryptKey":"%v",`, EncodedKey(32))
-		} else if strings.Contains(scanner.Text(), `"CSRFKey"`) {
+		case strings.Contains(scanner.Text(), `"CSRFKey"`):
 			newFile += fmt.Sprintf(`    "CSRFKey":"%v",`, EncodedKey(32))
-		} else {
+		default:
 			newFile += scanner.Text()
 		}
 	}

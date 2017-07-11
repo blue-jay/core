@@ -43,8 +43,8 @@ func Run(httpHandlers http.Handler, httpsHandlers http.Handler, info Info) {
 }
 
 // redirectToHTTPS will redirect from HTTP to HTTPS.
-func redirectToHTTPS(w http.ResponseWriter, req *http.Request) {
-	http.Redirect(w, req, "https://"+req.Host, http.StatusMovedPermanently)
+func redirectToHTTPS(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "https://"+r.Host, http.StatusMovedPermanently)
 }
 
 // startHTTP starts the HTTP listener.
