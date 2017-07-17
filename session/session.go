@@ -51,7 +51,7 @@ func (i *Info) SetupConfig() error {
 // Session Handling
 // *****************************************************************************
 
-// Instance returns and instance of the store.
+// Instance returns an instance of the store.
 func (i *Info) Instance(r *http.Request) (*sessions.Session, error) {
 	return i.store.Get(r, i.Name)
 }
