@@ -44,6 +44,9 @@ func (i *Info) SetupConfig() error {
 		i.store = sessions.NewCookieStore(auth)
 	}
 
+	// Store the options in the cookie store.
+	i.store.Options = &i.Options
+
 	return nil
 }
 

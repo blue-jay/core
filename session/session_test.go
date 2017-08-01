@@ -14,7 +14,7 @@ import (
 func TestSetConfig(t *testing.T) {
 	options := sessions.Options{
 		Path:     "/",
-		Domain:   "",
+		Domain:   "example.com",
 		MaxAge:   28800,
 		Secure:   false,
 		HttpOnly: true,
@@ -54,6 +54,11 @@ func TestSetConfig(t *testing.T) {
 		t.Fatalf("Session variable is missing.")
 	} else if val != text {
 		t.Fatalf(`Text should be: "%v", but is wrong: "%v"`, text, val)
+	}
+
+	// Test the options to make sure they are set.
+	if sess.Options.Domain != "example.com" {
+		t.Fatalf("Session options are missing.")
 	}
 }
 
