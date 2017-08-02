@@ -29,9 +29,9 @@ func UpdateFileKeys(src string) error {
 
 		switch {
 		case strings.Contains(scanner.Text(), `"AuthKey"`):
-			newFile += fmt.Sprintf(`    "AuthKey":"%v",`, EncodedKey(64))
+			newFile += fmt.Sprintf(`		"AuthKey": "%v",`, EncodedKey(64))
 		case strings.Contains(scanner.Text(), `"CSRFKey"`):
-			newFile += fmt.Sprintf(`    "CSRFKey":"%v",`, EncodedKey(32))
+			newFile += fmt.Sprintf(`		"CSRFKey": "%v",`, EncodedKey(32))
 		default:
 			newFile += scanner.Text()
 		}
