@@ -47,7 +47,7 @@ func TestFlashSession(t *testing.T) {
 	sess := Session{}
 
 	// Add flashes to the session
-	sess.AddFlash(flash.Info{text, flash.Success})
+	sess.AddFlash(flash.Success(text))
 
 	// Get the flashes
 	flashes := sess.Flashes()
@@ -57,14 +57,14 @@ func TestFlashSession(t *testing.T) {
 	}
 
 	// Convert the flash
-	f, ok := flashes[0].(flash.Info)
+	f, ok := flashes[0].(flash.Message)
 
-	if f.Class != flash.Success {
-		t.Fatal("Flash class is: %v, should be: %v.", f.Class, flash.Success)
+	if f.Class != "alert-success" {
+		t.Fatalf("Flash class is: %v, should be: %v.", f.Class, "alert-success")
 	}
 
-	if f.Message != text {
-		t.Fatalf("Flash message is: %v, should be: %v", f.Message, text)
+	if f.Content != text {
+		t.Fatalf("Flash message is: %v, should be: %v", f.Content, text)
 	}
 
 	if !ok {
@@ -103,7 +103,7 @@ func TestSendFlashes(t *testing.T) {
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Add flashes to the session
-		sess.AddFlash(flash.Info{text, flash.Success})
+		sess.AddFlash(flash.Success(text))
 		sess.AddFlash(text)
 
 		// Send the flashes
@@ -113,7 +113,7 @@ func TestSendFlashes(t *testing.T) {
 	handler.ServeHTTP(w, r)
 
 	actual := w.Body.String()
-	expected := fmt.Sprintf(`[{"Message":"%v","Class":"%v"},{"Message":"%v","Class":"%v"}]`, text, flash.Success, text, flash.Standard)
+	expected := fmt.Sprintf(`[{"Content":"%v","Class":"%v"},{"Content":"%v","Class":"%v"}]`, text, "alert-success", text, "alert-box")
 
 	if actual != expected {
 		t.Fatalf("\nactual: %v\nexpected: %v", actual, expected)

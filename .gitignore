@@ -1,10 +1,6 @@
-<<<<<<< HEAD
-vendor
-=======
 # Folders
 /vendor/
 
 # OS Files
 .DS_Store
 thumbs.db
->>>>>>> refs/remotes/origin/master
