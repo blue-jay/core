@@ -42,7 +42,7 @@ func DefaultMaxSize() int64 {
 	return 1048576
 }
 
-// record writes the line to the string array.
+// record writes the line to the slice of string.
 func record(line ...string) {
 	contents = append(contents, strings.Join(line, " "))
 }
@@ -56,7 +56,7 @@ func Run(text, folder, ext *string, recursive, filename *bool) ([]string, error)
 	flagRecursive = recursive
 	flagName = filename
 
-	contents = []string{}
+	contents = make([]string, 0)
 
 	record("Search Results")
 	record("==============")

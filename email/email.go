@@ -19,13 +19,14 @@ type Info struct {
 // header generates a plaintext header for the email.
 func header(c Info, to, subject, body string) map[string]string {
 	// Create the header
-	header := make(map[string]string)
-	header["From"] = c.From
-	header["To"] = to
-	header["Subject"] = subject
-	header["MIME-Version"] = "1.0"
-	header["Content-Type"] = `text/plain; charset="utf-8"`
-	header["Content-Transfer-Encoding"] = "base64"
+	header := map[string]string{
+		"From":                      c.From,
+		"To":                        to,
+		"Subject":                   subject,
+		"MIME-Version":              "1.0",
+		"Content-Type":              `text/html; charset="utf-8"`,
+		"Content-Transfer-Encoding": "base64",
+	}
 
 	return header
 }

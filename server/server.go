@@ -28,23 +28,24 @@ func Run(httpHandlers http.Handler, httpsHandlers http.Handler, info Info) {
 		httpHandlers = http.HandlerFunc(redirectToHTTPS)
 	}
 
-	if info.UseHTTP && info.UseHTTPS {
+	switch {
+	case info.UseHTTP && info.UseHTTPS:
 		go func() {
 			startHTTPS(httpsHandlers, info)
 		}()
 		startHTTP(httpHandlers, info)
-	} else if info.UseHTTP {
+	case info.UseHTTP:
 		startHTTP(httpHandlers, info)
-	} else if info.UseHTTPS {
+	case info.UseHTTPS:
 		startHTTPS(httpsHandlers, info)
-	} else {
+	default:
 		log.Println("Config file does not specify a listener to start")
 	}
 }
 
 // redirectToHTTPS will redirect from HTTP to HTTPS.
-func redirectToHTTPS(w http.ResponseWriter, req *http.Request) {
-	http.Redirect(w, req, "https://"+req.Host, http.StatusMovedPermanently)
+func redirectToHTTPS(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "https://"+r.Host, http.StatusMovedPermanently)
 }
 
 // startHTTP starts the HTTP listener.

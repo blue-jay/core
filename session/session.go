@@ -44,6 +44,9 @@ func (i *Info) SetupConfig() error {
 		i.store = sessions.NewCookieStore(auth)
 	}
 
+	// Store the options in the cookie store.
+	i.store.Options = &i.Options
+
 	return nil
 }
 
@@ -51,7 +54,7 @@ func (i *Info) SetupConfig() error {
 // Session Handling
 // *****************************************************************************
 
-// Instance returns and instance of the store.
+// Instance returns an instance of the store.
 func (i *Info) Instance(r *http.Request) (*sessions.Session, error) {
 	return i.store.Get(r, i.Name)
 }
