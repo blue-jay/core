@@ -10,6 +10,11 @@ import (
 	"sync"
 )
 
+// Mutexes which manage concurrent access to collections in the Info struct
+var extendMutex sync.RWMutex
+var modifyMutex sync.RWMutex
+var templateCacheMutex sync.RWMutex
+
 // Template holds the root and children templates.
 type Template struct {
 	Root     string   `json:"Root"`
@@ -30,13 +35,10 @@ type Info struct {
 	childTemplates []string
 	rootTemplate   string
 
-	extendList  template.FuncMap
-	modifyList  []ModifyFunc
-	extendMutex sync.RWMutex
-	modifyMutex sync.RWMutex
+	extendList template.FuncMap
+	modifyList []ModifyFunc
 
 	templateCollection map[string]*template.Template
-	mutex              sync.RWMutex
 }
 
 // *****************************************************************************
@@ -78,9 +80,9 @@ func (v *Info) Render(w http.ResponseWriter, r *http.Request) error {
 	key := strings.Join(v.templates, ":")
 
 	// Get the template collection from cache
-	v.mutex.RLock()
+	templateCacheMutex.RLock()
 	tc, ok := v.templateCollection[key]
-	v.mutex.RUnlock()
+	templateCacheMutex.RUnlock()
 
 	// Get the extend list
 	pc := v.extend()
@@ -107,9 +109,9 @@ func (v *Info) Render(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		// Cache the template collection
-		v.mutex.Lock()
+		templateCacheMutex.Lock()
 		v.templateCollection[key] = templates
-		v.mutex.Unlock()
+		templateCacheMutex.Unlock()
 
 		// Save the template collection
 		tc = templates

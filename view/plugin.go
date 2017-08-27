@@ -7,9 +7,9 @@ import (
 
 // extend safely reads the extend list.
 func (c *Info) extend() template.FuncMap {
-	c.extendMutex.RLock()
+	extendMutex.RLock()
 	list := c.extendList
-	c.extendMutex.RUnlock()
+	extendMutex.RUnlock()
 
 	return list
 }
@@ -17,18 +17,18 @@ func (c *Info) extend() template.FuncMap {
 // modify safely reads the modify list.
 func (c *Info) modify() []ModifyFunc {
 	// Get the setter collection
-	c.modifyMutex.RLock()
+	modifyMutex.RLock()
 	list := c.modifyList
-	c.modifyMutex.RUnlock()
+	modifyMutex.RUnlock()
 
 	return list
 }
 
 // SetTemplates will set the root and child templates.
 func (c *Info) SetTemplates(rootTemp string, childTemps []string) {
-	c.mutex.Lock()
+	templateCacheMutex.Lock()
 	c.templateCollection = make(map[string]*template.Template)
-	c.mutex.Unlock()
+	templateCacheMutex.Unlock()
 
 	c.rootTemplate = rootTemp
 	c.childTemplates = childTemps
@@ -40,9 +40,9 @@ type ModifyFunc func(http.ResponseWriter, *http.Request, *Info)
 // SetModifiers will set the modifiers for the View that run
 // before rendering.
 func (c *Info) SetModifiers(fn ...ModifyFunc) {
-	c.modifyMutex.Lock()
+	modifyMutex.Lock()
 	c.modifyList = fn
-	c.modifyMutex.Unlock()
+	modifyMutex.Unlock()
 }
 
 // SetFuncMaps will combine all template.FuncMaps into one map and then set the
@@ -61,7 +61,7 @@ func (c *Info) SetFuncMaps(fms ...template.FuncMap) {
 	}
 
 	// Load the plugins
-	c.extendMutex.Lock()
+	extendMutex.Lock()
 	c.extendList = fm
-	c.extendMutex.Unlock()
+	extendMutex.Unlock()
 }
