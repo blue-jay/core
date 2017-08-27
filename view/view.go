@@ -8,7 +8,12 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/oxtoacart/bpool"
 )
+
+// templateBufPool is a pool of output buffers for template rendering.
+var templateBufPool *bpool.BufferPool
 
 // Template holds the root and children templates.
 type Template struct {
@@ -65,6 +70,11 @@ func (v *Info) Base(base string) *Info {
 // Render parses one or more templates and outputs to the screen.
 // Also returns an error if anything is wrong.
 func (v *Info) Render(w http.ResponseWriter, r *http.Request) error {
+	// Initialise the output buffer pool if necessary
+	if templateBufPool == nil {
+		templateBufPool = bpool.NewBufferPool(32)
+	}
+
 	// Add the base template
 	v.templates = append([]string{v.base}, v.templates...)
 
@@ -123,12 +133,15 @@ func (v *Info) Render(w http.ResponseWriter, r *http.Request) error {
 		fn(w, r, v)
 	}
 
-	// Display the content to the screen
-	err := tc.Funcs(pc).ExecuteTemplate(w, baseTemplate+"."+v.Extension, v.Vars)
-
+	// Render the output to a buffer, check for errors, render buffer to screen
+	buf := templateBufPool.Get()
+	defer templateBufPool.Put(buf)
+	err := tc.Funcs(pc).ExecuteTemplate(buf, baseTemplate+"."+v.Extension, v.Vars)
 	if err != nil {
 		http.Error(w, "Template File Error: "+err.Error(), http.StatusInternalServerError)
+		return err
 	}
+	buf.WriteTo(w)
 
-	return err
+	return nil
 }
