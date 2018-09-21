@@ -83,7 +83,9 @@ func (c Configuration) New() (*migration.Info, error) {
 	if err != nil {
 		// Close the open connection (since 'unknown database' is still an
 		// active connection)
-		con.Close()
+		if con != nil {
+			con.Close()
+		}
 
 		// Connect to database without a database
 		con, err = i.Connect(false)
